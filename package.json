@@ -1,0 +1,22 @@
+{
+  "name": "dirtoracle",
+  "version": "0.0.1",
+  "description": "",
+  "scripts": {
+    "test": "embark test",
+    "clean": "rm -rf build",
+    "leverest-test": "mocha ./app",
+    "leverest-dev": "node ./app/server.js",
+    "leverest-build": "next build ./app"
+  },
+  "keywords": [],
+  "author": "",
+  "license": "MIT",
+  "dependencies": {
+    "lodash": "^4.17.11",
+    "truffle-hdwallet-provider": "^1.0.9",
+    "web3": "^1.0.0-beta.51"
+  },
+  "devDependencies": {
+  }
+}

@@ -1,0 +1,36 @@
+Arguments: 
+  /Users/sendrecv/.nvm/versions/node/v10.14.2/bin/node /Users/sendrecv/.nvm/versions/node/v10.14.2/bin/yarn init
+
+PATH: 
+  /usr/local/bin:/usr/bin:/bin:/usr/sbin:/sbin:/opt/pkg/sbin:/opt/pkg/bin:/usr/local/go/bin:/usr/local/MacGPG2/bin:/Users/sendrecv/google-cloud-sdk/bin:/Users/sendrecv/.nvm/versions/node/v10.14.2/bin:/Users/sendrecv/anaconda3/bin:/Users/sendrecv/go/bin:/Users/sendrecv/.local/bin:/Users/sendrecv/.cargo/bin:/usr/local/sbin
+
+Yarn version: 
+  1.13.0
+
+Node version: 
+  10.14.2
+
+Platform: 
+  darwin x64
+
+Trace: 
+  Error: canceled
+      at Interface.<anonymous> (/Users/sendrecv/.nvm/versions/node/v10.14.2/lib/node_modules/yarn/lib/cli.js:125657:13)
+      at Interface.emit (events.js:182:13)
+      at Interface._ttyWrite (readline.js:783:16)
+      at ReadStream.onkeypress (readline.js:168:10)
+      at ReadStream.emit (events.js:182:13)
+      at emitKeys (internal/readline.js:424:14)
+      at emitKeys.next (<anonymous>)
+      at ReadStream.onData (readline.js:1022:36)
+      at ReadStream.emit (events.js:182:13)
+      at addChunk (_stream_readable.js:283:12)
+
+npm manifest: 
+  No manifest
+
+yarn manifest: 
+  No manifest
+
+Lockfile: 
+  No lockfile
