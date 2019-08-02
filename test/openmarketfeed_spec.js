@@ -88,39 +88,55 @@ contract("OpenMarketFeed", function (accounts) {
     it("even price list (median)", async function () {
       let priceOmc = web3.utils.toWei('200');
       let priceCoinbase = web3.utils.toWei('250');
-      let timestamp = 123456789
-      let abiEncodedSignatureOMC = await createAbiEncodedSignature(priceOmc, timestamp, marketName, OMC_KEY)
-      let abiEncodedSignatureCoinbase = await createAbiEncodedSignature(priceCoinbase, timestamp, marketName, COINBASE_KEY)
-      await omf.post(
+      let timestampOmc = 123456789
+      let timestampCoinbase = 123456790
+      let abiEncodedSignatureOMC = await createAbiEncodedSignature(priceOmc, timestampOmc, marketName, OMC_KEY)
+      let abiEncodedSignatureCoinbase = await createAbiEncodedSignature(priceCoinbase, timestampCoinbase, marketName, COINBASE_KEY)
+      let tx = await omf.post(
         marketFeedName,
         [marketName, marketName],
         [priceOmc, priceCoinbase],
-        [timestamp, timestamp],
+        [timestampOmc, timestampCoinbase],
         [abiEncodedSignatureOMC, abiEncodedSignatureCoinbase]
       )
 
-      let fetchedPrice = await omf.getPrice(marketFeedName)
-      assert.equal(web3.utils.toWei('225'), fetchedPrice)
+      let res = await omf.getPriceAndTime(marketFeedName)
+      let fetchedPrice = res[0]
+      let fetchedTimestamp = res[2]
+
+      if (tx.receipt.blockNumber % 2 === 0) {
+        assert.equal(priceOmc, fetchedPrice)
+        assert.equal(timestampOmc, fetchedTimestamp)
+      } else {
+        assert.equal(priceCoinbase, fetchedPrice)
+        assert.equal(timestampCoinbase, fetchedTimestamp)
+      }
     })
 
     it("odd price list (median)", async function () {
       let priceOmc = web3.utils.toWei('200');
       let priceCoinbase = web3.utils.toWei('250');
       let priceKraken = web3.utils.toWei('251');
-      let timestamp = 123456789
-      let abiEncodedSignatureOMC = await createAbiEncodedSignature(priceOmc, timestamp, marketName, OMC_KEY)
-      let abiEncodedSignatureCoinbase = await createAbiEncodedSignature(priceCoinbase, timestamp, marketName, COINBASE_KEY)
-      let abiEncodedSignatureKraken = await createAbiEncodedSignature(priceKraken, timestamp, altMarketName, KRAKEN_KEY)
+      let timestampOmc = 123456789
+      let timestampCoinbase = 123456790
+      let timestampKraken = 123456800
+      let abiEncodedSignatureOMC = await createAbiEncodedSignature(priceOmc, timestampOmc, marketName, OMC_KEY)
+      let abiEncodedSignatureCoinbase = await createAbiEncodedSignature(priceCoinbase, timestampCoinbase, marketName, COINBASE_KEY)
+      let abiEncodedSignatureKraken = await createAbiEncodedSignature(priceKraken, timestampKraken, altMarketName, KRAKEN_KEY)
       await omf.post(
         marketFeedName,
         [marketName, marketName, altMarketName],
         [priceOmc, priceCoinbase, priceKraken],
-        [timestamp, timestamp, timestamp],
+        [timestampOmc, timestampCoinbase, timestampKraken],
         [abiEncodedSignatureOMC, abiEncodedSignatureCoinbase, abiEncodedSignatureKraken]
       )
 
-      let fetchedPrice = await omf.getPrice(marketFeedName)
-      assert.equal(web3.utils.toWei('250'), fetchedPrice)
+      let res = await omf.getPriceAndTime(marketFeedName)
+      let fetchedPrice = res[0]
+      let fetchedTimestamp = res[2]
+
+      assert.equal(priceCoinbase, fetchedPrice)
+      assert.equal(timestampCoinbase.toString(), fetchedTimestamp.toString())
     })
 
     it("unsorted price rejected", async function () {

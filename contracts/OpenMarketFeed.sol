@@ -46,28 +46,95 @@ contract OpenMarketFeed {
   /*************** Emitted Events *****************/
 
   // when a market feed is created
-  event MarketFeedCreation(bytes32 marketFeed, bytes32 marketId, uint256 minRequiredSources, address creator);
+  event MarketFeedCreation(
+    address indexed manager,
+    bytes32 indexed marketFeed,
+    uint256 minRequiredSources
+  );
+
+  // when an existing manager adds a new manager
+  event ManagerAddition(
+    address indexed manager,
+    bytes32 indexed marketFeed,
+    address indexed newManager
+  );
+
+  // when an existing manager removes a existing manager
+  event ManagerRemoval(
+    address indexed manager,
+    bytes32 indexed marketFeed,
+    address indexed firedManager
+  );
 
   // when a source is added
-  event SourceAddition(bytes32 indexed marketFeed, bytes32 source, bytes32 sourceMarketId, address indexed manager);
+  event SourceAddition(
+    address indexed manager,
+    bytes32 indexed marketFeed,
+    bytes32 indexed source,
+    bytes32 sourceMarketId
+  );
 
   // when a source is removed
-  event SourceRemoval(bytes32 indexed marketFeed, bytes32 source, address indexed manager);
+  event SourceRemoval(
+    address indexed manager,
+    bytes32 indexed marketFeed,
+    bytes32 indexed source
+  );
 
   // when a signer is added
-  event SignerAddition(bytes32 indexed marketFeed, bytes32 source, address signer, address indexed manager);
+  event SignerAddition(
+    address indexed manager,
+    bytes32 indexed marketFeed,
+    bytes32 indexed source,
+    address signer
+  );
 
   // when a signer is removed
-  event SignerRemoval(bytes32 indexed marketFeed, bytes32 source, address signer, address manager);
+  event SignerRemoval(
+    address indexed manager,
+    bytes32 indexed marketFeed,
+    bytes32 indexed source,
+    address signer
+  );
+
+  // when a reader is added
+  event ReaderAddition(
+    address indexed manager,
+    bytes32 indexed marketFeed,
+    address indexed newReader
+  );
+
+  // when a reader is removed
+  event ReaderRemoval(
+    address indexed manager,
+    bytes32 indexed marketFeed,
+    address indexed firedReader
+  );
 
   // when min required sources is updated
-  event MinRequiredSourcesUpdated(bytes32 indexed marketFeed, uint256 newMin, address manager);
+  event MinRequiredSourcesUpdated(
+    address indexed manager,
+    bytes32 indexed marketFeed,
+    uint256 newMin
+  );
 
   // when a valid source reports a price
-  event SourceReported(bytes32 marketFeed, bytes32 source, address reporter, uint256 epochTime);
+  event SignerReported(
+    bytes32 indexed marketFeed,
+    address indexed signerAddress,
+    uint256 price,
+    uint256 epochTime
+  );
 
   // when contract writes a median price
-  event MedianPriceWritten(bytes32 marketFeed, uint256 val, uint256 age, address reporterAddress);
+  event MedianPriceWritten(
+    address indexed reporterAddress,
+    bytes32 indexed marketFeed,
+    uint256 price,
+    uint256 epochTime,
+    address[] signerAddresses,
+    uint256[] signerPrices
+  );
 
   /*********************** Modifiers *******************/
 
@@ -101,14 +168,18 @@ contract OpenMarketFeed {
     uint256 bloom1 = 0;
     uint256 bloom0 = 0;
 
+    address[] memory signers = new address[](prices.length);
+
     for (uint i = 0; i < prices.length; i++) {
       // Check that signer is authorized.
       address signer = recover(marketIds[i], prices[i], epochTime[i], signatures[i]);
+      signers[i] = signer;
+
       bytes32 source = m.signerToSource[signer];
       require(source != 0, "Signature by invalid source");
       require(m.sourceToMarketId[source] == marketIds[i], "Invalid market ID for source");
 
-      emit SourceReported(marketFeed, source, signer, epochTime[i]);
+      // emit SignerReported(marketFeed, signer, prices[i], epochTime[i]);
 
       uint16 sourceId = m.sourceToId[m.signerToSource[signer]] - 1;
       if (sourceId <= 255) {
@@ -122,7 +193,7 @@ contract OpenMarketFeed {
       }
     }
 
-    acceptPrice(marketFeed, marketIds, prices, epochTime);
+    acceptPrice(marketFeed, marketIds, signers, prices, epochTime);
   }
 
   function getPrice(bytes32 marketFeed) external view readersOnly(marketFeed) returns (uint256) {
@@ -151,15 +222,19 @@ contract OpenMarketFeed {
     marketFeeds_config[name].readers[msg.sender] = true;
     marketFeeds_config[name].minRequiredSources = minRequiredSources;
 
-    emit MarketFeedCreation(name, marketId, minRequiredSources, msg.sender);
+    emit MarketFeedCreation(msg.sender, name, minRequiredSources);
   }
 
   function addManager(bytes32 marketFeed, address m) external managersOnly(marketFeed) {
     marketFeeds_config[marketFeed].managers[m] = true;
+
+    emit ManagerAddition(msg.sender, marketFeed, m);
   }
 
   function removeManager(bytes32 marketFeed, address m) external managersOnly(marketFeed) {
     marketFeeds_config[marketFeed].managers[m] = false;
+
+    emit ManagerRemoval(msg.sender, marketFeed, m);
   }
 
   function addSource(bytes32 marketFeed, bytes32 src, bytes32 sourceMarketId) public managersOnly(marketFeed) {
@@ -172,7 +247,7 @@ contract OpenMarketFeed {
     m.idToSource[m.lastSourceId] = src;
     m.sourceToMarketId[src] = sourceMarketId;
 
-    emit SourceAddition(marketFeed, src, sourceMarketId, msg.sender);
+    emit SourceAddition(msg.sender, marketFeed, src, sourceMarketId);
   }
 
   function removeSource(bytes32 marketFeed, bytes32 src) public managersOnly(marketFeed) {
@@ -198,7 +273,7 @@ contract OpenMarketFeed {
 
     m.lastSourceId--;
 
-    emit SourceRemoval(marketFeed, src, msg.sender);
+    emit SourceRemoval(msg.sender, marketFeed, src);
   }
 
   function addSigner(bytes32 marketFeed, bytes32 src, address signer) public managersOnly(marketFeed) {
@@ -209,7 +284,7 @@ contract OpenMarketFeed {
     m.signerToSource[signer] = src;
     m.sourceToSigners[src].push(signer);
 
-    emit SignerAddition(marketFeed, src, signer, msg.sender);
+    emit SignerAddition(msg.sender, marketFeed, src, signer);
   }
 
   function removeSigner(bytes32 marketFeed, address signer) external managersOnly(marketFeed) {
@@ -226,7 +301,7 @@ contract OpenMarketFeed {
     }
     delete m.signerToSource[signer];
 
-    emit SignerRemoval(marketFeed, src, signer, msg.sender);
+    emit SignerRemoval(msg.sender, marketFeed, src, signer);
   }
 
   // Convenience function for adding sources and signers at the same time.
@@ -250,16 +325,20 @@ contract OpenMarketFeed {
     require(newMin > 0, "min must be positive");
     marketFeeds_config[marketFeed].minRequiredSources = newMin;
 
-    emit MinRequiredSourcesUpdated(marketFeed, newMin, msg.sender);
+    emit MinRequiredSourcesUpdated(msg.sender, marketFeed, newMin);
   }
 
   function addReader(bytes32 marketFeed, address r) external managersOnly(marketFeed) {
     require (r != address(0), "No contract 0");
     marketFeeds_config[marketFeed].readers[r] = true;
+
+    emit ReaderAddition(msg.sender, marketFeed, r);
   }
 
   function removeReader(bytes32 marketFeed, address r) external managersOnly(marketFeed) {
     marketFeeds_config[marketFeed].readers[r] = false;
+
+    emit ReaderRemoval(msg.sender, marketFeed, r);
   }
 
   /*********************** Internal methods *******************/
@@ -286,20 +365,46 @@ contract OpenMarketFeed {
   }
 
   // @dev This function was split out of `post()` due to stack variable count limitations.
-  function acceptPrice(bytes32 marketFeed, bytes32[] memory marketIds, uint256[] memory prices, uint256[] memory epochTime) internal {
+  function acceptPrice(
+    bytes32 marketFeed,
+    bytes32[] memory marketIds,
+    address[] memory signers,
+    uint256[] memory prices,
+    uint256[] memory epochTime
+  ) internal {
+
     // Set price to median.
     uint256 medianPrice;
+    uint256 medianEpochTime;
     uint256 midPoint = prices.length >> 1;
+
     if (prices.length % 2 == 0) {
-      medianPrice = (prices[midPoint - 1] + prices[midPoint]) / 2;
+      if (block.number % 2 == 0) {
+        // lower price of middle two
+        medianPrice = prices[midPoint - 1];
+        medianEpochTime = epochTime[midPoint - 1];
+      } else {
+        // higher price of middle two
+        medianPrice = prices[midPoint];
+        medianEpochTime = epochTime[midPoint];
+      }
     } else {
-      medianPrice = prices[prices.length >> 1];
+      medianPrice = prices[midPoint];
+      medianEpochTime = epochTime[midPoint];
     }
+
     marketFeeds_data[marketFeed].price = medianPrice;
+    marketFeeds_data[marketFeed].epochTime = medianEpochTime;
 
     marketFeeds_data[marketFeed].blockTime = block.timestamp;
-    marketFeeds_data[marketFeed].epochTime = uint256(epochTime[prices.length >> 1]);
 
-    emit MedianPriceWritten(marketFeed, marketFeeds_data[marketFeed].price, marketFeeds_data[marketFeed].blockTime, msg.sender);
+    emit MedianPriceWritten(
+      msg.sender,
+      marketFeed,
+      marketFeeds_data[marketFeed].price,
+      marketFeeds_data[marketFeed].epochTime,
+      signers,
+      prices
+    );
   }
 }
