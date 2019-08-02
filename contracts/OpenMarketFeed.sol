@@ -349,7 +349,10 @@ contract OpenMarketFeed {
 
     for (uint i = 0; i < prices.length; i++) {
         require(epochTime[i] > lastUpdatedTime, "Price must be newer than last");
-        require(epochTime[i] < block.timestamp, "Price cannot be after blocktime");
+        require(
+          epochTime[i] < (block.timestamp + 300),
+          "Price timestamp cannot be more than 5 minutes after blocktime"
+        );
         require(prices[i] >= prevPrice, "List must be sorted");
         prevPrice = prices[i];
     }

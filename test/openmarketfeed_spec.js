@@ -155,20 +155,43 @@ contract("OpenMarketFeed", function (accounts) {
     })
 
     it("newer than block timestamp", async function () {
-      let priceOmc = web3.utils.toWei('200');
-      let priceCoinbase = web3.utils.toWei('201');
+      let priceOmc = web3.utils.toWei('200')
+      let priceCoinbase = web3.utils.toWei('201')
       let block = await web3.eth.getBlock(web3.eth.blockNumber)
-      let timestamp = block.timestamp * 2;
+      let timestamp = block.timestamp + 3000
 
-      let abiEncodedSignatureOMC = await createAbiEncodedSignature(priceOmc, timestamp, marketName, OMC_KEY)
-      let abiEncodedSignatureCoinbase = await createAbiEncodedSignature(priceCoinbase, timestamp, marketName, COINBASE_KEY)
+      let abiEncodedSignatureOMC = await createAbiEncodedSignature(
+        priceOmc, timestamp, marketName, OMC_KEY
+      )
+      let abiEncodedSignatureCoinbase = await createAbiEncodedSignature(
+        priceCoinbase, timestamp, marketName, COINBASE_KEY
+      )
       await expectRevert(omf.post(
         marketFeedName,
         [marketName, marketName],
         [priceOmc, priceCoinbase],
         [timestamp, timestamp],
         [abiEncodedSignatureOMC, abiEncodedSignatureCoinbase]
-      ), "Price cannot be after blocktime")
+      ), "Price timestamp cannot be more than 5 minutes after blocktime")
+    })
+
+    it("slightly newer than block timestamp", async function () {
+      let price = web3.utils.toWei('200')
+      let block = await web3.eth.getBlock(web3.eth.blockNumber)
+      let timestamp = block.timestamp + 295
+
+      let abiEncodedSignatureOMC = await createAbiEncodedSignature(
+        price, timestamp, marketName, OMC_KEY
+      )
+      omf.post(
+        marketFeedName,
+        [ marketName ],
+        [ price ],
+        [ timestamp ],
+        [ abiEncodedSignatureOMC ]
+      )
+      let fetchedPrice = await omf.getPrice(marketFeedName)
+      assert.equal(price, fetchedPrice)
     })
 
     it("older than last price", async function () {
