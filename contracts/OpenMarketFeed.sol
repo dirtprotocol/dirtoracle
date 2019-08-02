@@ -70,7 +70,7 @@ contract OpenMarketFeed {
   event SourceAddition(
     address indexed manager,
     bytes32 indexed marketFeed,
-    bytes32 source,
+    bytes32 indexed source,
     bytes32 sourceMarketId
   );
 
@@ -78,14 +78,14 @@ contract OpenMarketFeed {
   event SourceRemoval(
     address indexed manager,
     bytes32 indexed marketFeed,
-    bytes32 source
+    bytes32 indexed source
   );
 
   // when a signer is added
   event SignerAddition(
     address indexed manager,
     bytes32 indexed marketFeed,
-    bytes32 source,
+    bytes32 indexed source,
     address signer
   );
 
@@ -93,7 +93,7 @@ contract OpenMarketFeed {
   event SignerRemoval(
     address indexed manager,
     bytes32 indexed marketFeed,
-    bytes32 source,
+    bytes32 indexed source,
     address signer
   );
 
@@ -119,19 +119,21 @@ contract OpenMarketFeed {
   );
 
   // when a valid source reports a price
-  event SourceReported(
+  event SignerReported(
     bytes32 indexed marketFeed,
-    bytes32 source,
-    address reporter,
+    address indexed signerAddress,
+    uint256 price,
     uint256 epochTime
   );
 
   // when contract writes a median price
   event MedianPriceWritten(
+    address indexed reporterAddress,
     bytes32 indexed marketFeed,
     uint256 price,
-    uint256 age,
-    address reporterAddress
+    uint256 epochTime,
+    address[] signerAddresses,
+    uint256[] signerPrices
   );
 
   /*********************** Modifiers *******************/
@@ -166,14 +168,18 @@ contract OpenMarketFeed {
     uint256 bloom1 = 0;
     uint256 bloom0 = 0;
 
+    address[] memory signers = new address[](prices.length);
+
     for (uint i = 0; i < prices.length; i++) {
       // Check that signer is authorized.
       address signer = recover(marketIds[i], prices[i], epochTime[i], signatures[i]);
+      signers[i] = signer;
+
       bytes32 source = m.signerToSource[signer];
       require(source != 0, "Signature by invalid source");
       require(m.sourceToMarketId[source] == marketIds[i], "Invalid market ID for source");
 
-      emit SourceReported(marketFeed, source, signer, epochTime[i]);
+      // emit SignerReported(marketFeed, signer, prices[i], epochTime[i]);
 
       uint16 sourceId = m.sourceToId[m.signerToSource[signer]] - 1;
       if (sourceId <= 255) {
@@ -187,7 +193,7 @@ contract OpenMarketFeed {
       }
     }
 
-    acceptPrice(marketFeed, marketIds, prices, epochTime);
+    acceptPrice(marketFeed, marketIds, signers, prices, epochTime);
   }
 
   function getPrice(bytes32 marketFeed) external view readersOnly(marketFeed) returns (uint256) {
@@ -359,20 +365,46 @@ contract OpenMarketFeed {
   }
 
   // @dev This function was split out of `post()` due to stack variable count limitations.
-  function acceptPrice(bytes32 marketFeed, bytes32[] memory marketIds, uint256[] memory prices, uint256[] memory epochTime) internal {
+  function acceptPrice(
+    bytes32 marketFeed,
+    bytes32[] memory marketIds,
+    address[] memory signers,
+    uint256[] memory prices,
+    uint256[] memory epochTime
+  ) internal {
+
     // Set price to median.
     uint256 medianPrice;
+    uint256 medianEpochTime;
     uint256 midPoint = prices.length >> 1;
+
     if (prices.length % 2 == 0) {
-      medianPrice = (prices[midPoint - 1] + prices[midPoint]) / 2;
+      if (block.number % 2 == 0) {
+        // lower price of middle two
+        medianPrice = prices[midPoint - 1];
+        medianEpochTime = epochTime[midPoint - 1];
+      } else {
+        // higher price of middle two
+        medianPrice = prices[midPoint];
+        medianEpochTime = epochTime[midPoint];
+      }
     } else {
-      medianPrice = prices[prices.length >> 1];
+      medianPrice = prices[midPoint];
+      medianEpochTime = epochTime[midPoint];
     }
+
     marketFeeds_data[marketFeed].price = medianPrice;
+    marketFeeds_data[marketFeed].epochTime = medianEpochTime;
 
     marketFeeds_data[marketFeed].blockTime = block.timestamp;
-    marketFeeds_data[marketFeed].epochTime = uint256(epochTime[prices.length >> 1]);
 
-    emit MedianPriceWritten(marketFeed, marketFeeds_data[marketFeed].price, marketFeeds_data[marketFeed].blockTime, msg.sender);
+    emit MedianPriceWritten(
+      msg.sender,
+      marketFeed,
+      marketFeeds_data[marketFeed].price,
+      marketFeeds_data[marketFeed].epochTime,
+      signers,
+      prices
+    );
   }
 }
