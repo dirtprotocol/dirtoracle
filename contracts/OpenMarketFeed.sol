@@ -67,10 +67,19 @@ contract OpenMarketFeed {
   );
 
   // when a source is added
-  event SourceAddition(bytes32 indexed marketFeed, bytes32 source, bytes32 sourceMarketId, address indexed manager);
+  event SourceAddition(
+    address indexed manager,
+    bytes32 indexed marketFeed,
+    bytes32 source,
+    bytes32 sourceMarketId
+  );
 
   // when a source is removed
-  event SourceRemoval(bytes32 indexed marketFeed, bytes32 source, address indexed manager);
+  event SourceRemoval(
+    address indexed manager,
+    bytes32 indexed marketFeed,
+    bytes32 source
+  );
 
   // when a signer is added
   event SignerAddition(bytes32 indexed marketFeed, bytes32 source, address signer, address indexed manager);
@@ -194,7 +203,7 @@ contract OpenMarketFeed {
     m.idToSource[m.lastSourceId] = src;
     m.sourceToMarketId[src] = sourceMarketId;
 
-    emit SourceAddition(marketFeed, src, sourceMarketId, msg.sender);
+    emit SourceAddition(msg.sender, marketFeed, src, sourceMarketId);
   }
 
   function removeSource(bytes32 marketFeed, bytes32 src) public managersOnly(marketFeed) {
@@ -220,7 +229,7 @@ contract OpenMarketFeed {
 
     m.lastSourceId--;
 
-    emit SourceRemoval(marketFeed, src, msg.sender);
+    emit SourceRemoval(msg.sender, marketFeed, src);
   }
 
   function addSigner(bytes32 marketFeed, bytes32 src, address signer) public managersOnly(marketFeed) {
