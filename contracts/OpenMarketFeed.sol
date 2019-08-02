@@ -46,7 +46,11 @@ contract OpenMarketFeed {
   /*************** Emitted Events *****************/
 
   // when a market feed is created
-  event MarketFeedCreation(bytes32 marketFeed, bytes32 marketId, uint256 minRequiredSources, address creator);
+  event MarketFeedCreation(
+    address indexed manager,
+    bytes32 indexed marketFeed,
+    uint256 minRequiredSources
+  );
 
   // when an existing manager adds a new manager
   event ManagerAddition(
@@ -165,7 +169,7 @@ contract OpenMarketFeed {
     marketFeeds_config[name].readers[msg.sender] = true;
     marketFeeds_config[name].minRequiredSources = minRequiredSources;
 
-    emit MarketFeedCreation(name, marketId, minRequiredSources, msg.sender);
+    emit MarketFeedCreation(msg.sender, name, minRequiredSources);
   }
 
   function addManager(bytes32 marketFeed, address m) external managersOnly(marketFeed) {
