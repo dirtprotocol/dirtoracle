@@ -86,6 +86,19 @@ contract OpenMarketFeed {
 
   // when a signer is removed
   event SignerRemoval(bytes32 indexed marketFeed, bytes32 source, address signer, address manager);
+  // when a reader is added
+  event ReaderAddition(
+    address indexed manager,
+    bytes32 indexed marketFeed,
+    address indexed newReader
+  );
+
+  // when a reader is removed
+  event ReaderRemoval(
+    address indexed manager,
+    bytes32 indexed marketFeed,
+    address indexed firedReader
+  );
 
   // when min required sources is updated
   event MinRequiredSourcesUpdated(bytes32 indexed marketFeed, uint256 newMin, address manager);
@@ -287,10 +300,14 @@ contract OpenMarketFeed {
   function addReader(bytes32 marketFeed, address r) external managersOnly(marketFeed) {
     require (r != address(0), "No contract 0");
     marketFeeds_config[marketFeed].readers[r] = true;
+
+    emit ReaderAddition(msg.sender, marketFeed, r);
   }
 
   function removeReader(bytes32 marketFeed, address r) external managersOnly(marketFeed) {
     marketFeeds_config[marketFeed].readers[r] = false;
+
+    emit ReaderRemoval(msg.sender, marketFeed, r);
   }
 
   /*********************** Internal methods *******************/
