@@ -2,15 +2,11 @@ pragma solidity ^0.5.0;
 pragma experimental ABIEncoderV2; // Needed for using bytes[] parameter type.
 
 contract OpenMarketFeed {
-  struct MarketFeedSource {
-    bytes32 marketId;
-  }
 
   // Anyone can create a new MarketFeed with `createMarketFeed()`.
   // Only the managers of a MarketFeed can edit parameters (whitelists and config) of the marketFeed.
   // Anyone can post updates to the marketFeed data with `post()`, but the data is only accepted if it meets the marketFeed's configured criteria.
   struct MarketFeedConfig {
-    bytes32 marketId;
     mapping (bytes32 => bytes32) sourceToMarketId;
 
     // Whitelists, all editable only by managers
@@ -26,13 +22,12 @@ contract OpenMarketFeed {
     mapping (address => bool) readers;
     mapping (address => bool) managers;
 
-    uint256 minRequiredSources;
+    uint16 minRequiredSources;
   }
 
   struct MarketFeedData {
     // Last accepted data
-    uint256 price;
-    // uint256[] rawPrices;
+    int128 value;
     uint256 blockTime;
     uint256 epochTime;
   }
@@ -40,8 +35,8 @@ contract OpenMarketFeed {
   /*************** State attributes ***************/
 
   // A map from marketFeed name to MarketFeed.
-  mapping (bytes32 => MarketFeedConfig) public marketFeeds_config;
-  mapping (bytes32 => MarketFeedData) marketFeeds_data;
+  mapping (bytes32 => MarketFeedConfig) internal marketFeeds_config;
+  mapping (bytes32 => MarketFeedData) internal marketFeeds_data;
 
   /*************** Emitted Events *****************/
 
@@ -49,7 +44,7 @@ contract OpenMarketFeed {
   event MarketFeedCreation(
     address indexed manager,
     bytes32 indexed marketFeed,
-    uint256 minRequiredSources
+    uint16 minRequiredSources
   );
 
   // when an existing manager adds a new manager
@@ -115,25 +110,25 @@ contract OpenMarketFeed {
   event MinRequiredSourcesUpdated(
     address indexed manager,
     bytes32 indexed marketFeed,
-    uint256 newMin
+    uint16 newMin
   );
 
-  // when a valid source reports a price
+  // when a valid source reports a value
   event SignerReported(
     bytes32 indexed marketFeed,
     address indexed signerAddress,
-    uint256 price,
+    int128 value,
     uint256 epochTime
   );
 
-  // when contract writes a median price
-  event MedianPriceWritten(
+  // when contract writes a median value
+  event MedianValueWritten(
     address indexed reporterAddress,
     bytes32 indexed marketFeed,
-    uint256 price,
+    int128 value,
     uint256 epochTime,
     address[] signerAddresses,
-    uint256[] signerPrices
+    int128[] signerValues
   );
 
   /*********************** Modifiers *******************/
@@ -154,13 +149,13 @@ contract OpenMarketFeed {
 
   /*********************** External methods *******************/
 
-  // Posts a new sorted price list for a marketFeed.
-  function post(bytes32 marketFeed, bytes32[] calldata marketIds, uint256[] calldata prices, uint256[] calldata epochTime,
+  // Posts a new sorted value list for a marketFeed.
+  function post(bytes32 marketFeed, bytes32[] calldata marketIds, int128[] calldata values, uint256[] calldata epochTime,
       bytes[] calldata signatures) external {
-    checkAcceptablePrice(marketFeed, prices, epochTime);
+    checkAcceptableValue(marketFeed, values, epochTime);
 
     MarketFeedConfig storage m = marketFeeds_config[marketFeed];
-    require(prices.length >= m.minRequiredSources, "Not enough sources");
+    require(values.length >= m.minRequiredSources, "Not enough sources");
 
     // 512-bit vector to keep track of sources.
     // Each ID goes into a single slot in the 2 block vector of [bloom1, bloom0].
@@ -168,18 +163,18 @@ contract OpenMarketFeed {
     uint256 bloom1 = 0;
     uint256 bloom0 = 0;
 
-    address[] memory signers = new address[](prices.length);
+    address[] memory signers = new address[](values.length);
 
-    for (uint i = 0; i < prices.length; i++) {
+    for (uint i = 0; i < values.length; i++) {
       // Check that signer is authorized.
-      address signer = recover(marketIds[i], prices[i], epochTime[i], signatures[i]);
+      address signer = recover(marketIds[i], values[i], epochTime[i], signatures[i]);
       signers[i] = signer;
 
       bytes32 source = m.signerToSource[signer];
       require(source != 0, "Signature by invalid source");
       require(m.sourceToMarketId[source] == marketIds[i], "Invalid market ID for source");
 
-      // emit SignerReported(marketFeed, signer, prices[i], epochTime[i]);
+      // emit SignerReported(marketFeed, signer, values[i], epochTime[i]);
 
       uint16 sourceId = m.sourceToId[m.signerToSource[signer]] - 1;
       if (sourceId <= 255) {
@@ -193,31 +188,23 @@ contract OpenMarketFeed {
       }
     }
 
-    acceptPrice(marketFeed, marketIds, signers, prices, epochTime);
+    acceptValue(marketFeed, signers, values, epochTime);
   }
 
-  function getPrice(bytes32 marketFeed) external view readersOnly(marketFeed) returns (uint256) {
-    require(marketFeeds_data[marketFeed].price > 0, "Invalid price feed");
-    return marketFeeds_data[marketFeed].price;
+  function getValue(bytes32 marketFeed) external view readersOnly(marketFeed) returns (int128) {
+    return marketFeeds_data[marketFeed].value;
   }
 
-  function getPriceAndTime(bytes32 marketFeed) external view readersOnly(marketFeed)
-      returns (uint256 price, uint256 blockTime, uint256 epochTime) {
+  function getValueAndTime(bytes32 marketFeed) external view readersOnly(marketFeed)
+      returns (int128 value, uint256 blockTime, uint256 epochTime) {
     MarketFeedData storage m = marketFeeds_data[marketFeed];
-    require(m.price > 0, "Invalid price feed");
-    return (m.price, m.blockTime, m.epochTime);
+    return (m.value, m.blockTime, m.epochTime);
   }
-
-  // function getRawPrices(bytes32 marketFeed) external view readersOnly(marketFeed) returns (uint256[] memory) {
-  //   require(marketFeeds_data[marketFeed].price > 0, "Invalid price feed");
-  //   return marketFeeds_data[marketFeed].rawPrices;
-  // }
 
   // Initializes a new MarketFeed with the sender as the sole manager and reader.
-  function createMarketFeed(bytes32 name, bytes32 marketId, uint256 minRequiredSources) external {
+  function createMarketFeed(bytes32 name, uint16 minRequiredSources) external {
     require(marketFeeds_config[name].minRequiredSources == 0, "MarketFeed already exists");
-    require(minRequiredSources > 0, "Must require  > 0 sources");
-    marketFeeds_config[name].marketId = marketId;
+    require(minRequiredSources < 512, "Must require  < 512 sources");
     marketFeeds_config[name].managers[msg.sender] = true;
     marketFeeds_config[name].readers[msg.sender] = true;
     marketFeeds_config[name].minRequiredSources = minRequiredSources;
@@ -232,6 +219,10 @@ contract OpenMarketFeed {
   }
 
   function removeManager(bytes32 marketFeed, address m) external managersOnly(marketFeed) {
+    require(
+      marketFeeds_config[marketFeed].managers[m],
+      "Marketfeed or Manager does not exist"
+    );
     marketFeeds_config[marketFeed].managers[m] = false;
 
     emit ManagerRemoval(msg.sender, marketFeed, m);
@@ -239,7 +230,9 @@ contract OpenMarketFeed {
 
   function addSource(bytes32 marketFeed, bytes32 src, bytes32 sourceMarketId) public managersOnly(marketFeed) {
     require(src != 0, "Source cannot be 0");
+    require(sourceMarketId != 0, "sourceMarketId cannot be 0");
     MarketFeedConfig storage m = marketFeeds_config[marketFeed];
+    require(m.minRequiredSources > 0, "Marketfeed does not exist");
     require(m.sourceToId[src] == 0, "Source already exists");
     require(m.lastSourceId < 512, "Reached max of 511 sources");
     m.lastSourceId++;
@@ -281,6 +274,11 @@ contract OpenMarketFeed {
 
     MarketFeedConfig storage m = marketFeeds_config[marketFeed];
     require(m.sourceToId[src] != 0, "Invalid source for marketFeed");
+    require(m.signerToSource[signer] == 0, "Signer already added to this Source");
+    require(
+      m.sourceToSigners[src].length <= 20,
+      "Source cannot have more than 20 Signers"
+    );
     m.signerToSource[signer] = src;
     m.sourceToSigners[src].push(signer);
 
@@ -313,6 +311,11 @@ contract OpenMarketFeed {
     address[] calldata signers
   ) external managersOnly(marketFeed) {
     require(sources.length == sourceMarketIds.length && sources.length == signers.length, "Input lists must be of equal length");
+    require(sources.length != 0, "Source and Signer lists should not be empty");
+    require(
+      marketFeeds_config[marketFeed].minRequiredSources != 0,
+      "Marketfeed does not exist"
+    );
     for (uint i = 0; i < sources.length; i++) {
       if (marketFeeds_config[marketFeed].sourceToId[sources[i]] == 0) {
         addSource(marketFeed, sources[i], sourceMarketIds[i]);
@@ -321,8 +324,9 @@ contract OpenMarketFeed {
     }
   }
 
-  function setMinRequiredSources(bytes32 marketFeed, uint256 newMin) external managersOnly(marketFeed) {
+  function setMinRequiredSources(bytes32 marketFeed, uint16 newMin) external managersOnly(marketFeed) {
     require(newMin > 0, "min must be positive");
+    require(newMin < 512, "min must be less than 512");
     marketFeeds_config[marketFeed].minRequiredSources = newMin;
 
     emit MinRequiredSourcesUpdated(msg.sender, marketFeed, newMin);
@@ -336,6 +340,7 @@ contract OpenMarketFeed {
   }
 
   function removeReader(bytes32 marketFeed, address r) external managersOnly(marketFeed) {
+    require(r != address(0), "Reader address should not be 0");
     marketFeeds_config[marketFeed].readers[r] = false;
 
     emit ReaderRemoval(msg.sender, marketFeed, r);
@@ -343,71 +348,84 @@ contract OpenMarketFeed {
 
   /*********************** Internal methods *******************/
 
-  function checkAcceptablePrice(bytes32 marketFeed, uint256[] memory prices, uint256[] memory epochTime) internal view {
-    uint256 prevPrice = 0;
+  function checkAcceptableValue(bytes32 marketFeed, int128[] memory values, uint256[] memory epochTime) internal view {
+    int128 prevValue = values[0];
     uint256 lastUpdatedTime = marketFeeds_data[marketFeed].epochTime;
 
-    for (uint i = 0; i < prices.length; i++) {
-        require(epochTime[i] > lastUpdatedTime, "Price must be newer than last");
+    for (uint i = 0; i < values.length; i++) {
+        require(epochTime[i] > lastUpdatedTime, "Value must be newer than last");
         require(
           epochTime[i] < (block.timestamp + 300),
-          "Price timestamp cannot be more than 5 minutes after blocktime"
+          "Value timestamp cannot be more than 5 minutes after blocktime"
         );
-        require(prices[i] >= prevPrice, "List must be sorted");
-        prevPrice = prices[i];
+        require(values[i] >= prevValue, "List must be sorted");
+        prevValue = values[i];
     }
   }
 
-  // Recovers the signer of the marketFeed price data.
-  function recover(bytes32 marketId, uint256 price, uint256 time, bytes memory signature) internal pure returns (address) {
-    (bytes32 r, bytes32 s, uint8 v) = abi.decode(signature, (bytes32, bytes32, uint8));
+  // Recovers the signer of the marketFeed data.
+  function recover(
+    bytes32 marketId,
+    int128 value,
+    uint256 time,
+    bytes memory signature
+  )
+  internal pure returns (address)
+  {
+    (bytes32 r, bytes32 s, uint8 v) = abi.decode(
+      signature, (bytes32, bytes32, uint8)
+    );
     return ecrecover(
-        keccak256(abi.encodePacked("\x19Ethereum Signed Message:\n32", keccak256(abi.encodePacked(price, time, marketId)))),
+        keccak256(
+          abi.encodePacked(
+            "\x19Ethereum Signed Message:\n32",
+            keccak256(abi.encodePacked(value, time, marketId))
+          )
+        ),
         v, r, s
     );
   }
 
   // @dev This function was split out of `post()` due to stack variable count limitations.
-  function acceptPrice(
+  function acceptValue(
     bytes32 marketFeed,
-    bytes32[] memory marketIds,
     address[] memory signers,
-    uint256[] memory prices,
+    int128[] memory values,
     uint256[] memory epochTime
   ) internal {
 
-    // Set price to median.
-    uint256 medianPrice;
+    // Set value to median.
+    int128 medianValue;
     uint256 medianEpochTime;
-    uint256 midPoint = prices.length >> 1;
+    uint256 midPoint = values.length >> 1;
 
-    if (prices.length % 2 == 0) {
+    if (values.length % 2 == 0) {
       if (block.number % 2 == 0) {
-        // lower price of middle two
-        medianPrice = prices[midPoint - 1];
+        // lower values of middle two
+        medianValue = values[midPoint - 1];
         medianEpochTime = epochTime[midPoint - 1];
       } else {
-        // higher price of middle two
-        medianPrice = prices[midPoint];
+        // higher values of middle two
+        medianValue = values[midPoint];
         medianEpochTime = epochTime[midPoint];
       }
     } else {
-      medianPrice = prices[midPoint];
+      medianValue = values[midPoint];
       medianEpochTime = epochTime[midPoint];
     }
 
-    marketFeeds_data[marketFeed].price = medianPrice;
+    marketFeeds_data[marketFeed].value = medianValue;
     marketFeeds_data[marketFeed].epochTime = medianEpochTime;
 
     marketFeeds_data[marketFeed].blockTime = block.timestamp;
 
-    emit MedianPriceWritten(
+    emit MedianValueWritten(
       msg.sender,
       marketFeed,
-      marketFeeds_data[marketFeed].price,
+      marketFeeds_data[marketFeed].value,
       marketFeeds_data[marketFeed].epochTime,
       signers,
-      prices
+      values
     );
   }
 }
