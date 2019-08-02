@@ -82,10 +82,21 @@ contract OpenMarketFeed {
   );
 
   // when a signer is added
-  event SignerAddition(bytes32 indexed marketFeed, bytes32 source, address signer, address indexed manager);
+  event SignerAddition(
+    address indexed manager,
+    bytes32 indexed marketFeed,
+    bytes32 source,
+    address signer
+  );
 
   // when a signer is removed
-  event SignerRemoval(bytes32 indexed marketFeed, bytes32 source, address signer, address manager);
+  event SignerRemoval(
+    address indexed manager,
+    bytes32 indexed marketFeed,
+    bytes32 source,
+    address signer
+  );
+
   // when a reader is added
   event ReaderAddition(
     address indexed manager,
@@ -101,13 +112,27 @@ contract OpenMarketFeed {
   );
 
   // when min required sources is updated
-  event MinRequiredSourcesUpdated(bytes32 indexed marketFeed, uint256 newMin, address manager);
+  event MinRequiredSourcesUpdated(
+    address indexed manager,
+    bytes32 indexed marketFeed,
+    uint256 newMin
+  );
 
   // when a valid source reports a price
-  event SourceReported(bytes32 marketFeed, bytes32 source, address reporter, uint256 epochTime);
+  event SourceReported(
+    bytes32 indexed marketFeed,
+    bytes32 source,
+    address reporter,
+    uint256 epochTime
+  );
 
   // when contract writes a median price
-  event MedianPriceWritten(bytes32 marketFeed, uint256 val, uint256 age, address reporterAddress);
+  event MedianPriceWritten(
+    bytes32 indexed marketFeed,
+    uint256 price,
+    uint256 age,
+    address reporterAddress
+  );
 
   /*********************** Modifiers *******************/
 
@@ -253,7 +278,7 @@ contract OpenMarketFeed {
     m.signerToSource[signer] = src;
     m.sourceToSigners[src].push(signer);
 
-    emit SignerAddition(marketFeed, src, signer, msg.sender);
+    emit SignerAddition(msg.sender, marketFeed, src, signer);
   }
 
   function removeSigner(bytes32 marketFeed, address signer) external managersOnly(marketFeed) {
@@ -270,7 +295,7 @@ contract OpenMarketFeed {
     }
     delete m.signerToSource[signer];
 
-    emit SignerRemoval(marketFeed, src, signer, msg.sender);
+    emit SignerRemoval(msg.sender, marketFeed, src, signer);
   }
 
   // Convenience function for adding sources and signers at the same time.
@@ -294,7 +319,7 @@ contract OpenMarketFeed {
     require(newMin > 0, "min must be positive");
     marketFeeds_config[marketFeed].minRequiredSources = newMin;
 
-    emit MinRequiredSourcesUpdated(marketFeed, newMin, msg.sender);
+    emit MinRequiredSourcesUpdated(msg.sender, marketFeed, newMin);
   }
 
   function addReader(bytes32 marketFeed, address r) external managersOnly(marketFeed) {
