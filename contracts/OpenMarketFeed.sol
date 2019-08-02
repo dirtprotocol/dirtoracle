@@ -64,7 +64,7 @@ contract OpenMarketFeed {
     address indexed manager,
     bytes32 indexed marketFeed,
     address indexed firedManager
-  )
+  );
 
   // when a source is added
   event SourceAddition(bytes32 indexed marketFeed, bytes32 source, bytes32 sourceMarketId, address indexed manager);
