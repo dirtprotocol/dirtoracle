@@ -48,6 +48,20 @@ contract OpenMarketFeed {
   // when a market feed is created
   event MarketFeedCreation(bytes32 marketFeed, bytes32 marketId, uint256 minRequiredSources, address creator);
 
+  // when an existing manager adds a new manager
+  event ManagerAddition(
+    address indexed manager,
+    bytes32 indexed marketFeed,
+    address indexed newManager
+  );
+
+  // when an existing manager removes a existing manager
+  event ManagerRemoval(
+    address indexed manager,
+    bytes32 indexed marketFeed,
+    address indexed firedManager
+  )
+
   // when a source is added
   event SourceAddition(bytes32 indexed marketFeed, bytes32 source, bytes32 sourceMarketId, address indexed manager);
 
@@ -156,10 +170,14 @@ contract OpenMarketFeed {
 
   function addManager(bytes32 marketFeed, address m) external managersOnly(marketFeed) {
     marketFeeds_config[marketFeed].managers[m] = true;
+
+    emit ManagerAddition(msg.sender, marketFeed, m);
   }
 
   function removeManager(bytes32 marketFeed, address m) external managersOnly(marketFeed) {
     marketFeeds_config[marketFeed].managers[m] = false;
+
+    emit ManagerRemoval(msg.sender, marketFeed, m);
   }
 
   function addSource(bytes32 marketFeed, bytes32 src, bytes32 sourceMarketId) public managersOnly(marketFeed) {
