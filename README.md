@@ -3,7 +3,7 @@
 DIRT is an protocol for onchain pricefeeds. This readme walks through how you can use the DIRT pricefeed to get the latest ETH/USD on Ropsten. 
 
 ## Reading from the oracle on Ropsten
-The DIRT oracle is deployed on Ropsten and we maintain an ETH-USD price feed. The oracle fetches data from Coinbase, Kraken and OpenMarketCap, and stores the median value onchain. The price updates every minute and you can view the historical data on our dashboard:  
+The DIRT oracle is deployed on Ropsten and we maintain an ETH-USD price feed. The oracle fetches data from Coinbase, Kraken and OpenMarketCap, and stores the median value onchain. The price updates every minute and you can view the historical data on our dashboard: TODO 
 
 The oracle is deployed on Ropsten at the address [`0xa85F06Ed8834914F3Dd1473EF4337e8799eFe034`](https://ropsten.etherscan.io/address/0xa85f06ed8834914f3dd1473ef4337e8799efe034).  
 
