@@ -48,7 +48,7 @@ contract("OpenMarketFeed", function (accounts) {
 
   before(async () => {
     omf = await OpenMarketFeed.deployed()
-    await omf.createMarketFeed(marketFeedName, 1)
+    await omf.createMarketFeed(marketFeedName, 1, false)
   })
 
   beforeEach(async () => {
@@ -81,7 +81,7 @@ contract("OpenMarketFeed", function (accounts) {
     })
 
     it("duplicate market feed", async function () {
-      await expectRevert(omf.createMarketFeed(marketFeedName, 1),
+      await expectRevert(omf.createMarketFeed(marketFeedName, 1, false),
         'MarketFeed already exists');
     })
 
@@ -257,6 +257,12 @@ contract("OpenMarketFeed", function (accounts) {
       let timestamp = 123456789
       let abiEncodedSignature = await createAbiEncodedSignature(value, timestamp, marketName, OMC_KEY)
       await expectRevert(omf.post(marketFeedName, [marketName], [value], [timestamp], [abiEncodedSignature]), "Not enough sources")
+    })
+
+    it("change whether reads are free", async function () {
+      await omf.setIsFree(marketFeedName, true)
+      await omf.removeReader(marketFeedName, accounts[0])
+      await omf.getValue(marketFeedName)
     })
 
     it("reject reader after removal", async function () {

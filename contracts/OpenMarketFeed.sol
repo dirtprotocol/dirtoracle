@@ -23,6 +23,8 @@ contract OpenMarketFeed {
     mapping (address => bool) managers;
 
     uint16 minRequiredSources;
+
+    bool isFree; // If True, any address may read from this Marketfeed at no cost.
   }
 
   struct MarketFeedData {
@@ -113,6 +115,12 @@ contract OpenMarketFeed {
     uint16 newMin
   );
 
+  event IsFreeUpdated(
+    address manager,
+    bytes32 marketFeed,
+    bool isFree
+  );
+
   // when a valid source reports a value
   event SignerReported(
     bytes32 indexed marketFeed,
@@ -139,7 +147,13 @@ contract OpenMarketFeed {
   }
 
   modifier readersOnly(bytes32 marketFeed) {
-    require(marketFeeds_config[marketFeed].readers[msg.sender], "unauthorized reader");
+    MarketFeedConfig storage m = marketFeeds_config[marketFeed];
+    if (!m.isFree) {
+      require(
+        marketFeeds_config[marketFeed].readers[msg.sender],
+        "unauthorized reader"
+      );
+    }
     _;
   }
 
@@ -202,11 +216,18 @@ contract OpenMarketFeed {
   }
 
   // Initializes a new MarketFeed with the sender as the sole manager and reader.
-  function createMarketFeed(bytes32 name, uint16 minRequiredSources) external {
+  function createMarketFeed(
+    bytes32 name,
+    uint16 minRequiredSources,
+    bool isFree
+  )
+    external
+  {
     require(marketFeeds_config[name].minRequiredSources == 0, "MarketFeed already exists");
     require(minRequiredSources < 512, "Must require  < 512 sources");
     marketFeeds_config[name].managers[msg.sender] = true;
     marketFeeds_config[name].readers[msg.sender] = true;
+    marketFeeds_config[name].isFree = isFree;
     marketFeeds_config[name].minRequiredSources = minRequiredSources;
 
     emit MarketFeedCreation(msg.sender, name, minRequiredSources);
@@ -330,6 +351,11 @@ contract OpenMarketFeed {
     marketFeeds_config[marketFeed].minRequiredSources = newMin;
 
     emit MinRequiredSourcesUpdated(msg.sender, marketFeed, newMin);
+  }
+
+  function setIsFree(bytes32 marketFeed, bool isFree) external managersOnly(marketFeed) {
+    marketFeeds_config[marketFeed].isFree = isFree;
+    emit IsFreeUpdated(msg.sender, marketFeed, isFree);
   }
 
   function addReader(bytes32 marketFeed, address r) external managersOnly(marketFeed) {
