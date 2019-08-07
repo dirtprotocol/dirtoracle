@@ -24,8 +24,11 @@ You can deploy the contracts on Ganache and use it locally for testing by follow
     ```shell
     truffle migrate --reset
     ```
-
-5. Interact with the contract using the truffle console.
+5. Copy the ABI for the contracts to the dashboard iff you plan to run the dashboard. Example: 
+```
+cp ../../dirtoracle/build/contracts/DirtOracle.json assets/abi/ganache/DirtOracle.json
+```
+6. Interact with the contract using the truffle console.
 
     ```shell
     truffle console
