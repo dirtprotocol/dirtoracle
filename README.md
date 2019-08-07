@@ -39,7 +39,7 @@ var (medianPrice, blockTime, epochTime) = oracle.getValueAndTime("DIRT ETH/USD")
 
 The following prices are reported from Coinbase, Kraken, and OpenMarketCap during a round:
 
-```json
+```
 [
   {
     source: Kraken,
