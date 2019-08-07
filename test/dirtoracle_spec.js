@@ -1,8 +1,8 @@
 let helper = require("./test_helpers.js")
 
-const OpenMarketFeed = artifacts.require('OpenMarketFeed')
+const DirtOracle = artifacts.require('DirtOracle')
 
-contract("OpenMarketFeed", function (accounts) {
+contract("DirtOracle", function (accounts) {
 
   let marketFeedName = web3.utils.toHex('Official ETH/USD')
   let marketName = web3.utils.toHex('ETH/USD') // OMC, Coinbase
@@ -47,7 +47,7 @@ contract("OpenMarketFeed", function (accounts) {
   }
 
   before(async () => {
-    omf = await OpenMarketFeed.deployed()
+    omf = await DirtOracle.deployed()
     await omf.createMarketFeed(marketFeedName, 1, false)
   })
 

@@ -1,7 +1,7 @@
 pragma solidity ^0.5.0;
 pragma experimental ABIEncoderV2; // Needed for using bytes[] parameter type.
 
-contract OpenMarketFeed {
+contract DirtOracle {
 
   // Anyone can create a new MarketFeed with `createMarketFeed()`.
   // Only the managers of a MarketFeed can edit parameters (whitelists and config) of the marketFeed.
