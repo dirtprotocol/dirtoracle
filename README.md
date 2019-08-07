@@ -1,13 +1,13 @@
 # DIRT Oracle for Pricefeeds
 
-DIRT is an protocol for onchain pricefeeds. This readme walks through how you can use the DIRT pricefeed to get the latest ETH/USD on Ropsten. 
+DIRT is an protocol for onchain datafeeds. This readme walks through how you can use the DIRT pricefeed to get the latest ETH/USD on Ropsten. 
 
 ## Reading from the oracle on Ropsten
-The DIRT oracle is deployed on Ropsten and we maintain an ETH-USD price feed. The oracle fetches data from Coinbase, Kraken and OpenMarketCap, and stores the median value onchain. The price updates every minute and you can view the historical data on our dashboard: TODO 
+The DIRT oracle maintains an ETH-USD price feed. The oracle fetches data from Coinbase, Kraken and OpenMarketCap, and stores the median value from these sources onchain. The value updates every minute and you can view the historical data on the DIRT dashboard: TODO 
 
 The oracle is deployed on Ropsten at the address [`0xa85F06Ed8834914F3Dd1473EF4337e8799eFe034`](https://ropsten.etherscan.io/address/0xa85f06ed8834914f3dd1473ef4337e8799efe034).  
 
-There are two methods you can use to fetch data from the oracle: 
+Smart contracts can fetch the latest ETH/USD price from the DIRT oracle. There are two methods:
 ```
 function getValue(bytes32 marketFeed) external view readersOnly(marketFeed) returns (int128) {
   return marketFeeds_data[marketFeed].value;
@@ -19,17 +19,17 @@ function getValueAndTime(bytes32 marketFeed) external view readersOnly(marketFee
 }
 ```
 
-To get the latest median price, blockTime (time written onchain), and epochTime (time from the written source) of the update. 
+Use `getValueAndTime` to get the latest median value, blockTime (time written onchain), and epochTime (time from the written source) of the update: 
 
 ```
 Oracle oracle = Oracle("0xa85F06Ed8834914F3Dd1473EF4337e8799eFe034")
-var (medianPrice, blockTime, epochTime) = oracle.getValueAndTime("DIRT ETH/USD")
+var (medianValue, blockTime, epochTime) = oracle.getValueAndTime("DIRT ETH/USD")
 ```
 
-To get the latest median price:
+To get the latest median value:
 ```
 Oracle oracle = Oracle("0xa85F06Ed8834914F3Dd1473EF4337e8799eFe034")
-var medianPrice = oracle.getValue("DIRT ETH/USD")
+var medianValue = oracle.getValue("DIRT ETH/USD")
 ```
 
 ## Example
@@ -54,7 +54,7 @@ The following prices are reported from Coinbase, Kraken, and OpenMarketCap durin
   },
 ]
 ```
-Each source signs the prices to allow the onchain smart contract to verify that only data from approved sources can contribute to the price feed. In the above example, Kraken is the median value and the price is written onchain. The `epochTime` is the time in seconds at which the exchange reported the price (epochTime is reported by the source API). The `blockTime` is the time in seconds at which the block with the updated median price is mined (blocktime is reported by the miner). 
+Each source signs the prices to allow the onchain smart contract to verify that only data from approved sources can contribute to the price feed. In the above example, $210 from Kraken is the median value and is written onchain. The `epochTime` is the time in seconds at which the exchange reported the price (epochTime is reported by the source API). The `blockTime` is the time in seconds at which the block with the updated median price is mined (blocktime is reported by the miner). 
 
 ## Local setup 
 You can deploy the contracts on Ganache and use it locally for testing by following the instructions below. 
