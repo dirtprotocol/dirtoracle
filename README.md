@@ -28,7 +28,7 @@ Oracle oracle = Oracle("0xa85F06Ed8834914F3Dd1473EF4337e8799eFe034")
 var medianPrice = oracle.getValue("DIRT ETH/USD")
 ```
 
-Use `getValueAndTime` to read the value, blockTime (time written on-chain), and epochTime (time provided by the source of the price) of the update.
+Use `getValueAndTime` to read the value, blockTime (time written on-chain), and epochTime (time provided by the source of the price) of the update. The DIRT Oracle can support any data stream. The ETH/USD marketFeed maintained on Ropsten is referred to as `DIRT ETH/USD`. 
 
 ```solidity
 Oracle oracle = Oracle("0xa85F06Ed8834914F3Dd1473EF4337e8799eFe034")
