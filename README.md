@@ -4,7 +4,7 @@ DIRT is an oracle protocol for on-chain data feeds on Ethereum. This guide walks
 
 ## Reading from the Oracle on Ropsten
 
-The DIRT oracle maintain four price feeds: ETH/USD, PAX/USD, USDC/USD, TUSD/USD. The oracle fetches data from Coinbase, Kraken and OpenMarketCap, reports the data onchain, and writes the median value on-chain. 
+The DIRT oracle maintains four price feeds: ETH/USD, PAX/USD, USDC/USD, TUSD/USD. The oracle fetches data from Coinbase, Kraken and OpenMarketCap, reports the data on-chain, and writes the median value on-chain. 
 
 The Ropsten contract address is `0x4635b0Db6Bb8F332E2eD0ff4Bf5cEB52A8409fC0` ([etherscan](https://ropsten.etherscan.io/address/0xa85f06ed8834914f3dd1473ef4337e8799efe034)). 
 
