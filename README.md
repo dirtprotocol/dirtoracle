@@ -25,22 +25,31 @@ Use  `getValue` to read the value. The following examples show how to fetch data
 
 ```solidity
 contract Oracle {
-  function getValue(bytes32 marketFeed) returns (int128 value) {}
+
+  function getValue(bytes32 marketFeed) external view returns (int128 value) {}
+  
+  function getValueAndTime(bytes32 marketFeed) external view returns (
+    int128 value,
+    uint256 blockTime,
+    uint256 epochTime
+  ) {}
+
 }
 
 contract OracleReader {
-  function getDataFromOracle() {
-    Oracle oracle = Oracle("0x4635b0Db6Bb8F332E2eD0ff4Bf5cEB52A8409fC0") 
-    oracle.getValue("DIRT ETH-USD")
-  }
+
+    function getDataFromOracle() public view returns (int128) {
+        Oracle oracle = Oracle(0x4635b0Db6Bb8F332E2eD0ff4Bf5cEB52A8409fC0);
+        int128 medianPrice = oracle.getValue("DIRT ETH-USD");
+        return medianPrice;
+    }
+    
 }
 ```
 
 Use `getValueAndTime` to read the value, blockTime (time written on-chain), and epochTime (time provided by the source of the price) of the update. The DIRT Oracle can support any data stream. The ETH-USD marketFeed maintained on Ropsten is referred to as `DIRT ETH-USD`. 
 
 ```solidity
-pragma solidity ^0.5.0;
-
 contract Oracle {
 
   function getValue(bytes32 marketFeed) external view returns (int128 value) {}
@@ -55,9 +64,9 @@ contract Oracle {
 
 contract OracleReader {
 
-    function getPrice() public view returns (int128) {
+    function getDataFromOracle() public view returns (int128) {
         Oracle oracle = Oracle(0x4635b0Db6Bb8F332E2eD0ff4Bf5cEB52A8409fC0);
-        int128 medianPrice = oracle.getValue("DIRT ETH-USD");
+        int128 medianPrice = oracle.getValueAndTime("DIRT ETH-USD");
         return medianPrice;
     }
     
