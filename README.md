@@ -47,6 +47,14 @@ Use the MarketFeed ID to reference each oracle.
 
 ## How price is computed
 
+The DIRT oracle depends on public key encryption to report data onchain and verify correctness. Each price feed is created with a whitelisted set of sources. The public key of these sources are stored onchain and used to verify that only approved sources can contribute.  
+
+To write data to a price feed, reporters fetch data from sources and write the data onchain. Reporters send a sorted list of prices onchain. The DIRT oracle contract checks that the list is sorted and each data point came from a whitelisted source. If all conditions pass, the median value is written onchain. Otherwise, the entire list is rejected.
+
+With public key encryption, reporters cannot manipulate the price. Rather than depending on multiple reporting nodes, the DIRT oracle can update with greater frequency.
+
+## Example: ETH-USD prices
+
 The following prices are reported from Coinbase, Kraken, and OpenMarketCap during a round:
 
 ```
@@ -75,7 +83,11 @@ Each source signs the price data it publishes, allowing the smart contract to ve
 
 * Do you support other price feeds?
   
-  Currently, DIRT maintains the ETH/USD feed and has plans to add additional price feeds. To request a specific feed, submit an issue.
+  Currently, DIRT maintains the ETH/USD feed and has plans to add additional price feeds. To request a specific feed, submit an issue. 
+  
+* Can I create a datafeed for that uses custom sources? 
+ 
+  Yes - you can call the smart contract directly to create your own datafeeds with your own sources. We include instructions on getting setup for developing on the marketfeed here: https://github.com/dirtprotocol/dirtoracle/blob/master/README-dev.md. More details to close. 
 
 * How is this different from Chainlink?
   
@@ -84,3 +96,15 @@ Each source signs the price data it publishes, allowing the smart contract to ve
 * How is this different from Augur?
   
   This is not a prediction market. The DIRT oracle is focused on data that's regularly updating like price feeds.
+  
+* Why is this better than forking the code and building my own oracle?
+
+  DIRT maintains the insfrastucture to keep the oracle running by keeping the reporters running. We are also partnering with exchanges to sign messages so the data is trusted. 
+
+* How can I see the latest prices reported onchain? 
+  
+  We are launching a dashboard that gives users a historical view of marketfeeds shortly. 
+
+* How can I reach you? 
+
+  If you have a feature request, please submit an issue. We welcome PR contributions! For all other inquires, send an email to yin [at] dirtprotocol.com
