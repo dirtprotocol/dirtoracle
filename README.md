@@ -1,12 +1,12 @@
 # DIRT Oracle for Data feeds
 
-DIRT is an oracle protocol for on-chain data feeds on Ethereum. This guide walks through setting up your contracts to use the DIRT oracle to read the current ETH/USD value on Ropsten.
+DIRT is an oracle protocol for on-chain data feeds on Ethereum. This guide walks through setting up your contracts to use the DIRT oracle for your contracts.
 
 ## Reading from the Oracle on Ropsten
 
-The DIRT oracle maintain an ETH/USD price feed. The oracle fetches data from Coinbase, Kraken and OpenMarketCap, and stores the median value of these on-chain. The value updates every minute and you can view the historical data on the DIRT dashboard: TODO 
+The DIRT oracle maintain four price feeds: ETH/USD, PAX/USD, USDC/USD, TUSD/USD. The oracle fetches data from Coinbase, Kraken and OpenMarketCap, reports the data onchain, and writes the median value on-chain. 
 
-The Ropsten contract address is `0xa85F06Ed8834914F3Dd1473EF4337e8799eFe034` ([etherscan](https://ropsten.etherscan.io/address/0xa85f06ed8834914f3dd1473ef4337e8799efe034)). 
+The Ropsten contract address is `0x4635b0Db6Bb8F332E2eD0ff4Bf5cEB52A8409fC0` ([etherscan](https://ropsten.etherscan.io/address/0xa85f06ed8834914f3dd1473ef4337e8799efe034)). 
 
 Contracts have two options for reading latest data from a DIRT oracle feed:
 
@@ -21,19 +21,29 @@ function getValueAndTime(bytes32 marketFeed) external view readersOnly(marketFee
 }
 ```
 
-Use  `getValue` to read the value:
+Use  `getValue` to read the value. The following examples show how to fetch data from the "DIRT ETH-USD" marketFeed. See below for the list of marketFeeds maintained by DIRT:
 
 ```solidity
-Oracle oracle = Oracle("0xa85F06Ed8834914F3Dd1473EF4337e8799eFe034")
-var medianPrice = oracle.getValue("DIRT ETH/USD")
+Oracle oracle = Oracle("0x4635b0Db6Bb8F332E2eD0ff4Bf5cEB52A8409fC0")
+var medianPrice = oracle.getValue("DIRT ETH-USD")
 ```
 
-Use `getValueAndTime` to read the value, blockTime (time written on-chain), and epochTime (time provided by the source of the price) of the update. The DIRT Oracle can support any data stream. The ETH/USD marketFeed maintained on Ropsten is referred to as `DIRT ETH/USD`. 
+Use `getValueAndTime` to read the value, blockTime (time written on-chain), and epochTime (time provided by the source of the price) of the update. The DIRT Oracle can support any data stream. The ETH-USD marketFeed maintained on Ropsten is referred to as `DIRT ETH-USD`. 
 
 ```solidity
-Oracle oracle = Oracle("0xa85F06Ed8834914F3Dd1473EF4337e8799eFe034")
-var (medianPrice, blockTime, epochTime) = oracle.getValueAndTime("DIRT ETH/USD")
+Oracle oracle = Oracle("0x4635b0Db6Bb8F332E2eD0ff4Bf5cEB52A8409fC0")
+var (medianPrice, blockTime, epochTime) = oracle.getValueAndTime("DIRT ETH-USD")
 ```
+
+## Datafeeds maintained on Ropsten
+Use the MarketFeed ID to reference each oracle.
+
+| MarketFeed ID | Sources | Update Frequency | 
+| --------------| ------- | ---------------- |
+| DIRT ETH-USD | [OpenMarketCap](https://openmarketcap.com/cryptocurrency/pax-usd), [Coinbase](https://www.coinbase.com/price/ethereum), [Kraken](https://trade.kraken.com/markets/kraken/eth/usd) | every minute |
+| PAX-USD  | [OpenMarketCap](https://openmarketcap.com/cryptocurrency/pax-usd) | every 5 minutes |
+| TUSD-USD | [OpenMarketCap](https://openmarketcap.com/cryptocurrency/tusd-usd) | every 5 minutes |
+| USDC-USD | [OpenMarketCap](https://openmarketcap.com/cryptocurrency/usdc-usd) | every 5 minutes |
 
 ## How price is computed
 
