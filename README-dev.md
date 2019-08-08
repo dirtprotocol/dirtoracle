@@ -1,4 +1,4 @@
-# Contract developer instructions
+# Contract developer instructions [WIP]
 
 ## Run DIRT Oracle locally
 
