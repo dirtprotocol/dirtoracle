@@ -3,11 +3,11 @@ pragma experimental ABIEncoderV2; // Needed for using bytes[] parameter type.
 
 contract DirtOracle {
 
-  // Anyone can create a new MarketFeed with `createMarketFeed()`.
-  // Only the managers of a MarketFeed can edit parameters (whitelists and config) of the marketFeed.
-  // Anyone can post updates to the marketFeed data with `post()`, but the data is only accepted if it meets the marketFeed's configured criteria.
-  struct MarketFeedConfig {
-    mapping (bytes32 => bytes32) sourceToMarketId;
+  // Anyone can create a new DataFeed with `createDataFeed()`.
+  // Only the managers of a DataFeed can edit parameters (whitelists and config) of the dataFeed.
+  // Anyone can post updates to the dataFeed data with `post()`, but the data is only accepted if it meets the dataFeed's configured criteria.
+  struct DataFeedConfig {
+    mapping (bytes32 => bytes32) sourceToDataId;
 
     // Whitelists, all editable only by managers
     mapping (bytes32 => address[]) sourceToSigners;
@@ -24,10 +24,10 @@ contract DirtOracle {
 
     uint16 minRequiredSources;
 
-    bool isFree; // If True, any address may read from this Marketfeed at no cost.
+    bool isFree; // If True, any address may read from this Datafeed at no cost.
   }
 
-  struct MarketFeedData {
+  struct DataFeedData {
     // Last accepted data
     int128 value;
     uint256 blockTime;
@@ -36,52 +36,52 @@ contract DirtOracle {
 
   /*************** State attributes ***************/
 
-  // A map from marketFeed name to MarketFeed.
-  mapping (bytes32 => MarketFeedConfig) internal marketFeeds_config;
-  mapping (bytes32 => MarketFeedData) internal marketFeeds_data;
+  // A map from dataFeed name to DataFeed.
+  mapping (bytes32 => DataFeedConfig) internal dataFeeds_config;
+  mapping (bytes32 => DataFeedData) internal dataFeeds_data;
 
   /*************** Emitted Events *****************/
 
-  // when a market feed is created
-  event MarketFeedCreation(
+  // when a data feed is created
+  event DataFeedCreation(
     address indexed manager,
-    bytes32 indexed marketFeed,
+    bytes32 indexed dataFeed,
     uint16 minRequiredSources
   );
 
   // when an existing manager adds a new manager
   event ManagerAddition(
     address indexed manager,
-    bytes32 indexed marketFeed,
+    bytes32 indexed dataFeed,
     address indexed newManager
   );
 
   // when an existing manager removes a existing manager
   event ManagerRemoval(
     address indexed manager,
-    bytes32 indexed marketFeed,
+    bytes32 indexed dataFeed,
     address indexed firedManager
   );
 
   // when a source is added
   event SourceAddition(
     address indexed manager,
-    bytes32 indexed marketFeed,
+    bytes32 indexed dataFeed,
     bytes32 indexed source,
-    bytes32 sourceMarketId
+    bytes32 sourceDataId
   );
 
   // when a source is removed
   event SourceRemoval(
     address indexed manager,
-    bytes32 indexed marketFeed,
+    bytes32 indexed dataFeed,
     bytes32 indexed source
   );
 
   // when a signer is added
   event SignerAddition(
     address indexed manager,
-    bytes32 indexed marketFeed,
+    bytes32 indexed dataFeed,
     bytes32 indexed source,
     address signer
   );
@@ -89,7 +89,7 @@ contract DirtOracle {
   // when a signer is removed
   event SignerRemoval(
     address indexed manager,
-    bytes32 indexed marketFeed,
+    bytes32 indexed dataFeed,
     bytes32 indexed source,
     address signer
   );
@@ -97,33 +97,33 @@ contract DirtOracle {
   // when a reader is added
   event ReaderAddition(
     address indexed manager,
-    bytes32 indexed marketFeed,
+    bytes32 indexed dataFeed,
     address indexed newReader
   );
 
   // when a reader is removed
   event ReaderRemoval(
     address indexed manager,
-    bytes32 indexed marketFeed,
+    bytes32 indexed dataFeed,
     address indexed firedReader
   );
 
   // when min required sources is updated
   event MinRequiredSourcesUpdated(
     address indexed manager,
-    bytes32 indexed marketFeed,
+    bytes32 indexed dataFeed,
     uint16 newMin
   );
 
   event IsFreeUpdated(
     address manager,
-    bytes32 marketFeed,
+    bytes32 dataFeed,
     bool isFree
   );
 
   // when a valid source reports a value
   event SignerReported(
-    bytes32 indexed marketFeed,
+    bytes32 indexed dataFeed,
     address indexed signerAddress,
     int128 value,
     uint256 epochTime
@@ -132,7 +132,7 @@ contract DirtOracle {
   // when contract writes a median value
   event MedianValueWritten(
     address indexed reporterAddress,
-    bytes32 indexed marketFeed,
+    bytes32 indexed dataFeed,
     int128 value,
     uint256 epochTime,
     address[] signerAddresses,
@@ -141,16 +141,16 @@ contract DirtOracle {
 
   /*********************** Modifiers *******************/
 
-  modifier managersOnly(bytes32 marketFeed) {
-    require(marketFeeds_config[marketFeed].managers[msg.sender], 'not a manager');
+  modifier managersOnly(bytes32 dataFeed) {
+    require(dataFeeds_config[dataFeed].managers[msg.sender], 'not a manager');
     _;
   }
 
-  modifier readersOnly(bytes32 marketFeed) {
-    MarketFeedConfig storage m = marketFeeds_config[marketFeed];
+  modifier readersOnly(bytes32 dataFeed) {
+    DataFeedConfig storage m = dataFeeds_config[dataFeed];
     if (!m.isFree) {
       require(
-        marketFeeds_config[marketFeed].readers[msg.sender],
+        dataFeeds_config[dataFeed].readers[msg.sender],
         "unauthorized reader"
       );
     }
@@ -163,12 +163,12 @@ contract DirtOracle {
 
   /*********************** External methods *******************/
 
-  // Posts a new sorted value list for a marketFeed.
-  function post(bytes32 marketFeed, bytes32[] calldata marketIds, int128[] calldata values, uint256[] calldata epochTime,
+  // Posts a new sorted value list for a dataFeed.
+  function post(bytes32 dataFeed, bytes32[] calldata dataIds, int128[] calldata values, uint256[] calldata epochTime,
       bytes[] calldata signatures) external {
-    checkAcceptableValue(marketFeed, values, epochTime);
+    checkAcceptableValue(dataFeed, values, epochTime);
 
-    MarketFeedConfig storage m = marketFeeds_config[marketFeed];
+    DataFeedConfig storage m = dataFeeds_config[dataFeed];
     require(values.length >= m.minRequiredSources, "Not enough sources");
 
     // 512-bit vector to keep track of sources.
@@ -181,14 +181,14 @@ contract DirtOracle {
 
     for (uint i = 0; i < values.length; i++) {
       // Check that signer is authorized.
-      address signer = recover(marketIds[i], values[i], epochTime[i], signatures[i]);
+      address signer = recover(dataIds[i], values[i], epochTime[i], signatures[i]);
       signers[i] = signer;
 
       bytes32 source = m.signerToSource[signer];
       require(source != 0, "Signature by invalid source");
-      require(m.sourceToMarketId[source] == marketIds[i], "Invalid market ID for source");
+      require(m.sourceToDataId[source] == dataIds[i], "Invalid data ID for source");
 
-      // emit SignerReported(marketFeed, signer, values[i], epochTime[i]);
+      // emit SignerReported(dataFeed, signer, values[i], epochTime[i]);
 
       uint16 sourceId = m.sourceToId[m.signerToSource[signer]] - 1;
       if (sourceId <= 255) {
@@ -202,70 +202,70 @@ contract DirtOracle {
       }
     }
 
-    acceptValue(marketFeed, signers, values, epochTime);
+    acceptValue(dataFeed, signers, values, epochTime);
   }
 
-  function getValue(bytes32 marketFeed) external view readersOnly(marketFeed) returns (int128) {
-    return marketFeeds_data[marketFeed].value;
+  function getValue(bytes32 dataFeed) external view readersOnly(dataFeed) returns (int128) {
+    return dataFeeds_data[dataFeed].value;
   }
 
-  function getValueAndTime(bytes32 marketFeed) external view readersOnly(marketFeed)
+  function getValueAndTime(bytes32 dataFeed) external view readersOnly(dataFeed)
       returns (int128 value, uint256 blockTime, uint256 epochTime) {
-    MarketFeedData storage m = marketFeeds_data[marketFeed];
+    DataFeedData storage m = dataFeeds_data[dataFeed];
     return (m.value, m.blockTime, m.epochTime);
   }
 
-  // Initializes a new MarketFeed with the sender as the sole manager and reader.
-  function createMarketFeed(
+  // Initializes a new DataFeed with the sender as the sole manager and reader.
+  function createDataFeed(
     bytes32 name,
     uint16 minRequiredSources,
     bool isFree
   )
     external
   {
-    require(marketFeeds_config[name].minRequiredSources == 0, "MarketFeed already exists");
+    require(dataFeeds_config[name].minRequiredSources == 0, "DataFeed already exists");
     require(minRequiredSources < 512, "Must require  < 512 sources");
-    marketFeeds_config[name].managers[msg.sender] = true;
-    marketFeeds_config[name].readers[msg.sender] = true;
-    marketFeeds_config[name].isFree = isFree;
-    marketFeeds_config[name].minRequiredSources = minRequiredSources;
+    dataFeeds_config[name].managers[msg.sender] = true;
+    dataFeeds_config[name].readers[msg.sender] = true;
+    dataFeeds_config[name].isFree = isFree;
+    dataFeeds_config[name].minRequiredSources = minRequiredSources;
 
-    emit MarketFeedCreation(msg.sender, name, minRequiredSources);
+    emit DataFeedCreation(msg.sender, name, minRequiredSources);
   }
 
-  function addManager(bytes32 marketFeed, address m) external managersOnly(marketFeed) {
-    marketFeeds_config[marketFeed].managers[m] = true;
+  function addManager(bytes32 dataFeed, address m) external managersOnly(dataFeed) {
+    dataFeeds_config[dataFeed].managers[m] = true;
 
-    emit ManagerAddition(msg.sender, marketFeed, m);
+    emit ManagerAddition(msg.sender, dataFeed, m);
   }
 
-  function removeManager(bytes32 marketFeed, address m) external managersOnly(marketFeed) {
+  function removeManager(bytes32 dataFeed, address m) external managersOnly(dataFeed) {
     require(
-      marketFeeds_config[marketFeed].managers[m],
-      "Marketfeed or Manager does not exist"
+      dataFeeds_config[dataFeed].managers[m],
+      "Datafeed or Manager does not exist"
     );
-    marketFeeds_config[marketFeed].managers[m] = false;
+    dataFeeds_config[dataFeed].managers[m] = false;
 
-    emit ManagerRemoval(msg.sender, marketFeed, m);
+    emit ManagerRemoval(msg.sender, dataFeed, m);
   }
 
-  function addSource(bytes32 marketFeed, bytes32 src, bytes32 sourceMarketId) public managersOnly(marketFeed) {
+  function addSource(bytes32 dataFeed, bytes32 src, bytes32 sourceDataId) public managersOnly(dataFeed) {
     require(src != 0, "Source cannot be 0");
-    require(sourceMarketId != 0, "sourceMarketId cannot be 0");
-    MarketFeedConfig storage m = marketFeeds_config[marketFeed];
-    require(m.minRequiredSources > 0, "Marketfeed does not exist");
+    require(sourceDataId != 0, "sourceDataId cannot be 0");
+    DataFeedConfig storage m = dataFeeds_config[dataFeed];
+    require(m.minRequiredSources > 0, "Datafeed does not exist");
     require(m.sourceToId[src] == 0, "Source already exists");
     require(m.lastSourceId < 512, "Reached max of 511 sources");
     m.lastSourceId++;
-    m.sourceToId[src] = marketFeeds_config[marketFeed].lastSourceId;
+    m.sourceToId[src] = dataFeeds_config[dataFeed].lastSourceId;
     m.idToSource[m.lastSourceId] = src;
-    m.sourceToMarketId[src] = sourceMarketId;
+    m.sourceToDataId[src] = sourceDataId;
 
-    emit SourceAddition(msg.sender, marketFeed, src, sourceMarketId);
+    emit SourceAddition(msg.sender, dataFeed, src, sourceDataId);
   }
 
-  function removeSource(bytes32 marketFeed, bytes32 src) public managersOnly(marketFeed) {
-    MarketFeedConfig storage m = marketFeeds_config[marketFeed];
+  function removeSource(bytes32 dataFeed, bytes32 src) public managersOnly(dataFeed) {
+    DataFeedConfig storage m = dataFeeds_config[dataFeed];
 
     // Reassign source in last slot to take the removed source's ID.
     uint16 idToReassign = m.sourceToId[src];
@@ -287,14 +287,14 @@ contract DirtOracle {
 
     m.lastSourceId--;
 
-    emit SourceRemoval(msg.sender, marketFeed, src);
+    emit SourceRemoval(msg.sender, dataFeed, src);
   }
 
-  function addSigner(bytes32 marketFeed, bytes32 src, address signer) public managersOnly(marketFeed) {
+  function addSigner(bytes32 dataFeed, bytes32 src, address signer) public managersOnly(dataFeed) {
     require(signer != address(0), "No signer 0");
 
-    MarketFeedConfig storage m = marketFeeds_config[marketFeed];
-    require(m.sourceToId[src] != 0, "Invalid source for marketFeed");
+    DataFeedConfig storage m = dataFeeds_config[dataFeed];
+    require(m.sourceToId[src] != 0, "Invalid source for dataFeed");
     require(m.signerToSource[signer] == 0, "Signer already added to this Source");
     require(
       m.sourceToSigners[src].length <= 20,
@@ -303,11 +303,11 @@ contract DirtOracle {
     m.signerToSource[signer] = src;
     m.sourceToSigners[src].push(signer);
 
-    emit SignerAddition(msg.sender, marketFeed, src, signer);
+    emit SignerAddition(msg.sender, dataFeed, src, signer);
   }
 
-  function removeSigner(bytes32 marketFeed, address signer) external managersOnly(marketFeed) {
-    MarketFeedConfig storage m = marketFeeds_config[marketFeed];
+  function removeSigner(bytes32 dataFeed, address signer) external managersOnly(dataFeed) {
+    DataFeedConfig storage m = dataFeeds_config[dataFeed];
     bytes32 src = m.signerToSource[signer];
     address[] storage sourcesSigners = m.sourceToSigners[src];
 
@@ -320,63 +320,63 @@ contract DirtOracle {
     }
     delete m.signerToSource[signer];
 
-    emit SignerRemoval(msg.sender, marketFeed, src, signer);
+    emit SignerRemoval(msg.sender, dataFeed, src, signer);
   }
 
   // Convenience function for adding sources and signers at the same time.
   // Adds source if it doesn't exist yet.
   function batchAddSourceAndSigner(
-    bytes32 marketFeed,
+    bytes32 dataFeed,
     bytes32[] calldata sources,
-    bytes32[] calldata sourceMarketIds,
+    bytes32[] calldata sourceDataIds,
     address[] calldata signers
-  ) external managersOnly(marketFeed) {
-    require(sources.length == sourceMarketIds.length && sources.length == signers.length, "Input lists must be of equal length");
+  ) external managersOnly(dataFeed) {
+    require(sources.length == sourceDataIds.length && sources.length == signers.length, "Input lists must be of equal length");
     require(sources.length != 0, "Source and Signer lists should not be empty");
     require(
-      marketFeeds_config[marketFeed].minRequiredSources != 0,
-      "Marketfeed does not exist"
+      dataFeeds_config[dataFeed].minRequiredSources != 0,
+      "Datafeed does not exist"
     );
     for (uint i = 0; i < sources.length; i++) {
-      if (marketFeeds_config[marketFeed].sourceToId[sources[i]] == 0) {
-        addSource(marketFeed, sources[i], sourceMarketIds[i]);
+      if (dataFeeds_config[dataFeed].sourceToId[sources[i]] == 0) {
+        addSource(dataFeed, sources[i], sourceDataIds[i]);
       }
-      addSigner(marketFeed, sources[i], signers[i]);
+      addSigner(dataFeed, sources[i], signers[i]);
     }
   }
 
-  function setMinRequiredSources(bytes32 marketFeed, uint16 newMin) external managersOnly(marketFeed) {
+  function setMinRequiredSources(bytes32 dataFeed, uint16 newMin) external managersOnly(dataFeed) {
     require(newMin > 0, "min must be positive");
     require(newMin < 512, "min must be less than 512");
-    marketFeeds_config[marketFeed].minRequiredSources = newMin;
+    dataFeeds_config[dataFeed].minRequiredSources = newMin;
 
-    emit MinRequiredSourcesUpdated(msg.sender, marketFeed, newMin);
+    emit MinRequiredSourcesUpdated(msg.sender, dataFeed, newMin);
   }
 
-  function setIsFree(bytes32 marketFeed, bool isFree) external managersOnly(marketFeed) {
-    marketFeeds_config[marketFeed].isFree = isFree;
-    emit IsFreeUpdated(msg.sender, marketFeed, isFree);
+  function setIsFree(bytes32 dataFeed, bool isFree) external managersOnly(dataFeed) {
+    dataFeeds_config[dataFeed].isFree = isFree;
+    emit IsFreeUpdated(msg.sender, dataFeed, isFree);
   }
 
-  function addReader(bytes32 marketFeed, address r) external managersOnly(marketFeed) {
+  function addReader(bytes32 dataFeed, address r) external managersOnly(dataFeed) {
     require (r != address(0), "No contract 0");
-    marketFeeds_config[marketFeed].readers[r] = true;
+    dataFeeds_config[dataFeed].readers[r] = true;
 
-    emit ReaderAddition(msg.sender, marketFeed, r);
+    emit ReaderAddition(msg.sender, dataFeed, r);
   }
 
-  function removeReader(bytes32 marketFeed, address r) external managersOnly(marketFeed) {
+  function removeReader(bytes32 dataFeed, address r) external managersOnly(dataFeed) {
     require(r != address(0), "Reader address should not be 0");
-    marketFeeds_config[marketFeed].readers[r] = false;
+    dataFeeds_config[dataFeed].readers[r] = false;
 
-    emit ReaderRemoval(msg.sender, marketFeed, r);
+    emit ReaderRemoval(msg.sender, dataFeed, r);
   }
 
   /*********************** Internal methods *******************/
 
-  function checkAcceptableValue(bytes32 marketFeed, int128[] memory values, uint256[] memory epochTime) internal view {
+  function checkAcceptableValue(bytes32 dataFeed, int128[] memory values, uint256[] memory epochTime) internal view {
     int128 prevValue = values[0];
-    uint256 lastUpdatedTime = marketFeeds_data[marketFeed].epochTime;
+    uint256 lastUpdatedTime = dataFeeds_data[dataFeed].epochTime;
 
     for (uint i = 0; i < values.length; i++) {
         require(epochTime[i] > lastUpdatedTime, "Value must be newer than last");
@@ -389,9 +389,9 @@ contract DirtOracle {
     }
   }
 
-  // Recovers the signer of the marketFeed data.
+  // Recovers the signer of the dataFeed data.
   function recover(
-    bytes32 marketId,
+    bytes32 dataId,
     int128 value,
     uint256 time,
     bytes memory signature
@@ -405,7 +405,7 @@ contract DirtOracle {
         keccak256(
           abi.encodePacked(
             "\x19Ethereum Signed Message:\n32",
-            keccak256(abi.encodePacked(value, time, marketId))
+            keccak256(abi.encodePacked(value, time, dataId))
           )
         ),
         v, r, s
@@ -414,7 +414,7 @@ contract DirtOracle {
 
   // @dev This function was split out of `post()` due to stack variable count limitations.
   function acceptValue(
-    bytes32 marketFeed,
+    bytes32 dataFeed,
     address[] memory signers,
     int128[] memory values,
     uint256[] memory epochTime
@@ -440,16 +440,16 @@ contract DirtOracle {
       medianEpochTime = epochTime[midPoint];
     }
 
-    marketFeeds_data[marketFeed].value = medianValue;
-    marketFeeds_data[marketFeed].epochTime = medianEpochTime;
+    dataFeeds_data[dataFeed].value = medianValue;
+    dataFeeds_data[dataFeed].epochTime = medianEpochTime;
 
-    marketFeeds_data[marketFeed].blockTime = block.timestamp;
+    dataFeeds_data[dataFeed].blockTime = block.timestamp;
 
     emit MedianValueWritten(
       msg.sender,
-      marketFeed,
-      marketFeeds_data[marketFeed].value,
-      marketFeeds_data[marketFeed].epochTime,
+      dataFeed,
+      dataFeeds_data[dataFeed].value,
+      dataFeeds_data[dataFeed].epochTime,
       signers,
       values
     );

@@ -11,24 +11,24 @@ The Ropsten contract address is `0x4635b0Db6Bb8F332E2eD0ff4Bf5cEB52A8409fC0` ([e
 Contracts have two options for reading latest data from a DIRT oracle feed:
 
 ```solidity
-function getValue(bytes32 marketFeed) external view readersOnly(marketFeed) returns (int128) {
-  return marketFeeds_data[marketFeed].value;
+function getValue(bytes32 dataFeed) external view readersOnly(dataFeed) returns (int128) {
+  return dataFeeds_data[dataFeed].value;
 }
 
-function getValueAndTime(bytes32 marketFeed) external view readersOnly(marketFeed) returns (int128 value, uint256 blockTime, uint256 epochTime) {
-  MarketFeedData storage m = marketFeeds_data[marketFeed];
+function getValueAndTime(bytes32 dataFeed) external view readersOnly(dataFeed) returns (int128 value, uint256 blockTime, uint256 epochTime) {
+  DataFeedData storage m = dataFeeds_data[dataFeed];
   return (m.value, m.blockTime, m.epochTime);
 }
 ```
 
-Use  `getValue` to read the value. The following examples show how to fetch data from the "DIRT ETH-USD" marketFeed. See below for the list of marketFeeds maintained by DIRT:
+Use  `getValue` to read the value. The following examples show how to fetch data from the "DIRT ETH-USD" dataFeed. See below for the list of dataFeeds maintained by DIRT:
 
 ```solidity
 contract Oracle {
 
-  function getValue(bytes32 marketFeed) external view returns (int128 value) {}
+  function getValue(bytes32 dataFeed) external view returns (int128 value) {}
   
-  function getValueAndTime(bytes32 marketFeed) external view returns (
+  function getValueAndTime(bytes32 dataFeed) external view returns (
     int128 value,
     uint256 blockTime,
     uint256 epochTime
@@ -47,14 +47,14 @@ contract OracleReader {
 }
 ```
 
-Use `getValueAndTime` to read the value, blockTime (time written on-chain), and epochTime (time provided by the source of the price) of the update. The DIRT Oracle can support any data stream. The ETH-USD marketFeed maintained on Ropsten is referred to as `DIRT ETH-USD`. 
+Use `getValueAndTime` to read the value, blockTime (time written on-chain), and epochTime (time provided by the source of the price) of the update. The DIRT Oracle can support any data stream. The ETH-USD dataFeed maintained on Ropsten is referred to as `DIRT ETH-USD`. 
 
 ```solidity
 contract Oracle {
 
-  function getValue(bytes32 marketFeed) external view returns (int128 value) {}
+  function getValue(bytes32 dataFeed) external view returns (int128 value) {}
   
-  function getValueAndTime(bytes32 marketFeed) external view returns (
+  function getValueAndTime(bytes32 dataFeed) external view returns (
     int128 value,
     uint256 blockTime,
     uint256 epochTime
@@ -74,9 +74,9 @@ contract OracleReader {
 ```
 
 ## Datafeeds maintained on Ropsten
-Use the MarketFeed ID to reference each oracle.
+Use the DataFeed ID to reference each oracle.
 
-| MarketFeed ID | Sources | Update Frequency | 
+| DataFeed ID | Sources | Update Frequency | 
 | --------------| ------- | ---------------- |
 | DIRT ETH-USD | [OpenMarketCap](https://openmarketcap.com/cryptocurrency/pax-usd), [Coinbase](https://www.coinbase.com/price/ethereum), [Kraken](https://trade.kraken.com/markets/kraken/eth/usd) | every minute |
 | PAX-USD  | [OpenMarketCap](https://openmarketcap.com/cryptocurrency/pax-usd) | every 5 minutes |
@@ -125,7 +125,7 @@ Each source signs the price data it publishes, allowing the smart contract to ve
   
 * Can I create a datafeed for that uses custom sources? 
  
-  Yes - you can call the smart contract directly to create your own datafeeds with your own sources. We include instructions on getting setup for developing on the marketfeed here: https://github.com/dirtprotocol/dirtoracle/blob/master/README-dev.md. More details to close. 
+  Yes - you can call the smart contract directly to create your own datafeeds with your own sources. We include instructions on getting setup for developing on the datafeed here: https://github.com/dirtprotocol/dirtoracle/blob/master/README-dev.md. More details to close. 
 
 * How is this different from Chainlink?
   
@@ -133,7 +133,7 @@ Each source signs the price data it publishes, allowing the smart contract to ve
 
 * How is this different from Augur?
   
-  This is not a prediction market. The DIRT oracle is focused on data that's regularly updating like price feeds.
+  This is not a prediction data. The DIRT oracle is focused on data that's regularly updating like price feeds.
   
 * Why is this better than forking the code and building my own oracle?
 
@@ -141,7 +141,7 @@ Each source signs the price data it publishes, allowing the smart contract to ve
 
 * How can I see the latest prices reported onchain? 
   
-  We are launching a dashboard that gives users a historical view of marketfeeds shortly. 
+  We are launching a dashboard that gives users a historical view of datafeeds shortly. 
 
 * How can I reach you? 
 
