@@ -19,10 +19,10 @@ contract DirtOracle {
     // If a source is deleted, the last source is reassigned its ID and the last source ID is freed up.
     uint16 lastSourceId;
 
+    uint16 minRequiredSources;
+
     mapping (address => bool) readers;
     mapping (address => bool) managers;
-
-    uint16 minRequiredSources;
 
     bool isFree; // If True, any address may read from this Datafeed at no cost.
   }
@@ -30,14 +30,14 @@ contract DirtOracle {
   struct DataFeedData {
     // Last accepted data
     int128 value;
-    uint256 blockTime;
-    uint256 epochTime;
+    uint64 blockTime;
+    uint64 epochTime;
   }
 
   /*************** State attributes ***************/
 
   // A map from dataFeed name to DataFeed.
-  mapping (bytes32 => DataFeedConfig) internal dataFeeds_config;
+  mapping (bytes32 => DataFeedConfig) public dataFeeds_config;
   mapping (bytes32 => DataFeedData) internal dataFeeds_data;
 
   /*************** Emitted Events *****************/
