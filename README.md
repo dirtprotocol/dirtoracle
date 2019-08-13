@@ -9,7 +9,7 @@ The DIRT oracle is **live on the Ropsten testnet**. This guide walks through how
 
 ## Reading from the Oracle on Ropsten
 
-The DIRT oracle maintains four price feeds: ETH/USD, PAX/USD, USDC/USD, TUSD/USD. The oracle fetches data from Coinbase, Kraken and OpenMarketCap, reports the data on-chain, and writes the median value on-chain. 
+The DIRT oracle maintains four price feeds: `ETH/USD`, `PAX/USD`, `USDC/USD`, `TUSD/USD`. The oracle fetches data from Coinbase, Kraken and OpenMarketCap, reports the data on-chain, and writes the median value on-chain. 
 
 The Ropsten contract address is `0x9fAf61F729d43Ca13bC27298B050522C8De6D841` ([etherscan](https://ropsten.etherscan.io/address/0xa85f06ed8834914f3dd1473ef4337e8799efe034)). 
 
