@@ -30,8 +30,8 @@ contract DirtOracle {
   struct DataFeedData {
     // Last accepted data
     int128 value;
-    uint64 blockTime;
-    uint64 epochTime;
+    uint256 blockTime;
+    uint256 epochTime;
   }
 
   /*************** State attributes ***************/
