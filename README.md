@@ -155,6 +155,10 @@ Each source signs the price data it publishes, allowing the smart contract to ve
 * How can I see the latest prices reported onchain? 
   
   We are launching a dashboard that gives users a historical view of datafeeds shortly. 
+  
+* What is the SLO for onchain prices?
+
+  Prices on testnet will be maintained on a best-effort basis.
 
 * How can I reach you? 
 
