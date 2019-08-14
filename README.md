@@ -163,3 +163,6 @@ Each source signs the price data it publishes, allowing the smart contract to ve
 * How can I reach you? 
 
   If you have a feature request, please submit an issue. We welcome PR contributions! For all other inquires, send an email to yin [at] dirtprotocol.com
+  
+## License
+MIT
