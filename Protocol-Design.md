@@ -1,4 +1,4 @@
-# DIRT Oracle - Draft v0.1 (Feedback Welcome)
+# Pricefeed Oracle - Draft v0.1 (Feedback welcome)
 
 ## Abstract
 An Oracle makes off-chain data available for use in smart-contracts. Enabling integration with external data sources is one of the biggest challenges for the mainstream adoption of blockchain technologies. DIRT presents an oracle design for data feeds. We describe a protocol to report data on chain that is provably correct using signed messages, and a reward mechanism to incentivize efficiency and redundancy. The protocol further introduces the concept of an Oracle Security Check to make the system resilient to economic attacks and bribes. 
@@ -23,9 +23,11 @@ Part of the challenge in building a data feed oracle is the friction between eff
 A marketfeed is a regularly updating, on-chain data (ex: ETH-USD). Any user can use DIRT to create a new marketfeed by defining an array of accepted sources. 
 
 The three components of the DIRT oracle system work together to send data onchain:
-DataSource - external data-sources providing signed messages to use for on-chain verification 
-Reporters - off-chain nodes responsible for transporting data on-chain
-Oracle Security Check - a voting based dispute resolution protocol to detect and prevent corrupted data. 
+* DataSource - external data-sources providing signed messages to use for on-chain verification 
+* Reporters - off-chain nodes responsible for transporting data on-chain
+* Oracle Security Check - a voting based dispute resolution protocol to detect and prevent corrupted data. 
+
+![Oracle Spec](images/OracleDiagram.png)
 
 ### Data Sources: Trusted off-chain sources
 DIRT uses public key encryption to verify the data came from approved sources. Each marketfeed is created with an array of approved sources. Every data source has a public / private key pair. The source uses the private key to sign the data message off-chain. The DIRT oracle contract uses the stored public key to verify the data’s origin onchain. 
