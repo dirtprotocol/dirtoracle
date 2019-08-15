@@ -7,7 +7,7 @@ DIRT is an oracle protocol that is designed for regularly updating data streams 
 The DIRT oracle is **live on the Ropsten testnet**. This guide walks through how to connect your smart contracts to the oracles to read from up-to-date datafeeds.
 
 ## Protocol design (WIP)
-To find out more details on the oracle check out the working draft of the protocol design: [Protocol Design Link](https://docs.google.com/document/d/1xGm7UsCPdGn5aFRAr3m7ApE-sNnsYeEtCRJ9gYsEj6E/edit#). 
+To find out more details on the oracle check out the working draft of the protocol design: [Protocol Design Link](https://github.com/dirtprotocol/dirtoracle/blob/master/Protocol-Design.md). 
 
 Welcome your feedback!
 
