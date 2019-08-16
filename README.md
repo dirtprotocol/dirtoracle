@@ -1,10 +1,15 @@
 # DIRT Oracle for Data feeds
 
-An oracle brings off-chain data onto the blockchain for use in smart contracts. Existing oracle designs are optimized for one-time responses and are not suited for regularly updating data streams. Previous efforts at building data feeds oracles have been centralized or expensive to maintain. 
-
 DIRT is an oracle protocol that is designed for regularly updating data streams (i.e. pricefeeds). Our protocol design uses  public key encryption to submit provably correct data on-chain. A decentralized network of reporters transmit data from offchain sources (ex: Coinbase API) to the onchain Oracle smart contract. With public key encryption, the smart contract verifies that only approved sources can submit data onchain to prevent reporters from manipulating data in-transit.  
 
 The DIRT oracle is **live on the Ropsten testnet**. This guide walks through how to connect your smart contracts to the oracles to read from up-to-date datafeeds.
+
+## Current feature list
+
+* Support for four onchain datafeeds with `ETH/USD`, `PAX/USD`, `USDC/USD`, `TUSD/USD` - even more upcoming soon
+* Dashboard to track current datafeed: https://ropsten.dirtoracle.com/
+* Smart contract features that allow you to create and read from new datasets  
+* Out of the box service to create and maintain your own datafeed. Opensourced code to run a reporter and proxySigner (coming soon) 
 
 ## Protocol design (WIP)
 To find out more details on the oracle check out the working draft of the protocol design: [Protocol Design Link](https://github.com/dirtprotocol/dirtoracle/blob/master/Protocol-Design.md). 
