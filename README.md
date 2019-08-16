@@ -140,6 +140,26 @@ The following prices are reported from Coinbase, Kraken, and OpenMarketCap durin
 
 Each source signs the price data it publishes, allowing the smart contract to verify and enforce that only data from approved sources can contribute to the price feed. In the above example, $210.340352 from Kraken is the median value and the price is written on-chain. The `epochTime` is the time in seconds at which the exchange reported the price (epochTime is reported by the source API). The `blockTime` is the time in seconds at which the block with the updated median price is mined (blocktime is reported by the miner).
 
+## Creating a datafeed (WIP)
+Creating a datafeed is more involved. To help you get started, we've opensourced utilities to sign messsage (ProxySigner) and push data onchain (Reporters).
+
+Steps to creating a datafeed:
+* Create a datafeed in the smart contract - Call the contract directly to create a new datafeed. Dashboard interface coming soon. 
+* Whitelist sources to the datafeed - Add the address (i.e. public key) of whitelisted ProxySigners to the contract. Only messages signed by whitelisted sources can submit data onchain.
+* Run a ProxySigner or use a DIRT run ProxySigner - ProxySigners fetch data from datasources and sign messages on their behalf. See the [ProxySigner](https://github.com/dirtprotocol/proxysigner/blob/master/README.md) docs.
+* Run a Reporter - Reporters transport data from ProxySigners to the Smart Contract. See the [Reporter](https://github.com/dirtprotocol/reporter) docs.
+* Check prices hit the contract - Read from the oracle and check that prices made it onchain. The new datafeed will not appear on the dashboard. 
+
+### DIRT operated ProxySigners
+DIRT operates ProxySigners / Sources for three sources. Instead of running a ProxySigner, you can create a datafeed and add the address of one of the following sources. You will still need to run a reporter to push data onchain.
+
+| ProxySigner | URL | Address (Public Key) | Datasets |
+| ----------- | ----------- |----------- |----------- |
+| OpenMarketCap | https://us-central1-dirthub.cloudfunctions.net/proxysigner-kraken?pair=BTCUSD | 0xA1B3457bdBd16A5Cf1b1D460C9A53F0276959BC8 | [https://openmarketcap.com/](https://openmarketcap.com/) |
+| Coinbase | https://us-central1-dirthub.cloudfunctions.net/proxysigner-coinbase?pair=BTC/USD | 0x450A47eD3dEc0Db7749A6c76425E8FD4b16cc4c2 | [Check Coinbase API for supported assets](https://developers.coinbase.com/api/v2) |
+| Kraken | https://us-central1-dirthub.cloudfunctions.net/proxysigner-kraken?pair=ADA/BTC | 0x4444bA94D9eCdBFB2C94F397864E126FbAb77fBb | [Kraken Assets - use wsname](https://api.kraken.com/0/public/AssetPairs) |
+
+
 ## FAQ
 
 * Do you support other price feeds?
