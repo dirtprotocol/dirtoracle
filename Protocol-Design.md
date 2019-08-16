@@ -20,7 +20,7 @@ Part of the challenge in building a data feed oracle is the friction between eff
 
 ## DIRT Oracle Design
 
-A marketfeed is a regularly updating, on-chain data (ex: ETH-USD). Any user can use DIRT to create a new marketfeed by defining an array of accepted sources. 
+A datafeed is a regularly updating, on-chain data (ex: ETH-USD). Any user can use DIRT to create a new datafeed by defining an array of accepted sources. 
 
 The three components of the DIRT oracle system work together to send data onchain:
 * DataSource - external data-sources providing signed messages to use for on-chain verification 
@@ -30,7 +30,7 @@ The three components of the DIRT oracle system work together to send data onchai
 ![Oracle Spec](images/OracleDiagram.png)
 
 ### Data Sources: Trusted off-chain sources
-DIRT uses public key encryption to verify the data came from approved sources. Each marketfeed is created with an array of approved sources. Every data source has a public / private key pair. The source uses the private key to sign the data message off-chain. The DIRT oracle contract uses the stored public key to verify the data’s origin onchain. 
+DIRT uses public key encryption to verify the data came from approved sources. Each datafeed is created with an array of approved sources. Every data source has a public / private key pair. The source uses the private key to sign the data message off-chain. The DIRT oracle contract uses the stored public key to verify the data’s origin onchain. 
 
 The smart contract accepts the message only when all conditions are met:
 
@@ -39,8 +39,8 @@ The smart contract accepts the message only when all conditions are met:
 * Includes at least N sources - A minimum number of whitelisted sources must report. The median value from all sources is stored on-chain.
 * Latest data source timestamp - Every data point must be after the previously recorded time stamp. If any source includes an earlier timestamp, the entire list is rejected.
 
-The DIRT oracle writes the median value of all sources onchain. To protect the data from corruption or failures from any one source, DIRT recommends, but does not enforce, multiple sources per marketfeed. A marketfeed for ETH-USD should sample prices from multiple exchanges so a flash crash on a single exchange would not affect the median value.
-Readers of a marketfeed must implicitly trust the sources to use that marketfeed. For example, for an ETH-USD marketfeed that uses Coinbase and Binance as sources, the reader must implicitly trust Coinbase and Binance. If a user does not trust the sources for a marketfeed, they can create a new marketfeed and define their own set of trusted proxies. DIRT provides an open source proxySigner service that allows users to run and sign their own messages. 
+The DIRT oracle writes the median value of all sources onchain. To protect the data from corruption or failures from any one source, DIRT recommends, but does not enforce, multiple sources per datafeed. A datafeed for ETH-USD should sample prices from multiple exchanges so a flash crash on a single exchange would not affect the median value.
+Readers of a datafeed must implicitly trust the sources to use that datafeed. For example, for an ETH-USD datafeed that uses Coinbase and Binance as sources, the reader must implicitly trust Coinbase and Binance. If a user does not trust the sources for a datafeed, they can create a new datafeed and define their own set of trusted proxies. DIRT provides an open source proxySigner service that allows users to run and sign their own messages. 
 
 ### Data Transport: Sending data on-chain
 Reporters are off-chain services responsible for transmitting data on-chain. To make the system fault tolerant and quick to update, DIRT incentivizes reporters to compete to write the data onchain. The first reporter to send an approved message on chain earns a reward. Anyone can run a reporter and reporters cannot manipulate messages in transit. The smart contract validates all messages using public key encryption and rejects manipulated data. 
@@ -61,7 +61,7 @@ To profit from an attack, a malicious actor would need to acquire over half of t
 The v1 design depends on the Oracle building out a system of challenges and voting for the dispute resolution. An alternative approach is integrating services like UMA Protocol for the Oracle Security Check.
 
 ### Alice and Bob: Dispute resolution with the OSC
-Alice and Bob open a futures contract betting on the price of Ethereum for $1M with an initial margin deposit of $100k. Alice bets that Ethereum will be more than $200 in one month and Bob bets that it will be less than $200. The contract settles based on a DIRT ETH-USD marketfeed that sources data from Coinbase, Binance, and Kraken at a specified time.
+Alice and Bob open a futures contract betting on the price of Ethereum for $1M with an initial margin deposit of $100k. Alice bets that Ethereum will be more than $200 in one month and Bob bets that it will be less than $200. The contract settles based on a DIRT ETH-USD datafeed that sources data from Coinbase, Binance, and Kraken at a specified time.
 
 In the happy path, Alice and Bob agree with the settlement price reported by the DIRT oracle. The futures contract terminates without dispute. 
 
@@ -74,7 +74,7 @@ DIRT token holders help settle the dispute by voting on the resolution price. Pr
 There are three actors in the network: readers, reporters, and datasources. Readers provide the funding for the system to incentivize reporters to submit data on-chain. The incentives of each actor is follows:
 
 * Readers - users of the DIRT oracle service are projects that need a decentralized, reliable, and trustworthy on-chain oracle. Today, most projects build their own oracle. A third party service saves engineering time and creates more decentralized platforms. To use the DIRT oracle, readers deposit funds into the DIRT payment contracts to whitelist their public key. Readers pay on a per-read basis.   
-* Reporters - reporters earn a reward if they are the first to submit data to a marketfeed. The reward is provided by readers and keeps the oracle data up-to-date by incentivizing reporters to race to submit the latest data to the smart contract.
+* Reporters - reporters earn a reward if they are the first to submit data to a datafeed. The reward is provided by readers and keeps the oracle data up-to-date by incentivizing reporters to race to submit the latest data to the smart contract.
 * Datasources - provide the initial data and sign the message for on-chain reporting. Currently, the incentive for being a proxy is to support DIRT and to gain status as a deFi supported. We plan to add an incentive to proxySigners in future upgrades. 
 
 ## Oracle Use Cases
@@ -87,7 +87,7 @@ Mitigation:​ Smart contract security and best security practices is the highes
 Mitigation:​ The DIRT oracles will need to supply a sufficiently higher reward to Watchers to incentivize them to safeguard the network against corrupted data. Reporters account for network congestion by adjusting the gas fee to 50% more than the currently deemed safe levels.
 
 ## Glossary of Terms
-* Marketfeed: data feed that is available on-chain 
+* Datafeed: data feed that is available on-chain 
 * Data sources: external APIs providing the raw data
 * Proxy Signers: utility service used by data sources to sign messages 
 * Reporters: external actors that bring data from off-chain on to the blockchain
