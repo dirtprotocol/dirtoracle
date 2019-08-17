@@ -21,7 +21,7 @@ Welcome your feedback!
 
 The DIRT oracle maintains four price feeds: `ETH/USD`, `PAX/USD`, `USDC/USD`, `TUSD/USD`. The oracle fetches data from Coinbase, Kraken and OpenMarketCap, reports the data on-chain, and writes the median value on-chain. 
 
-The Ropsten contract address is `0x9fAf61F729d43Ca13bC27298B050522C8De6D841` ([etherscan](https://ropsten.etherscan.io/address/0xa85f06ed8834914f3dd1473ef4337e8799efe034)). 
+The Ropsten contract address is `0x9fAf61F729d43Ca13bC27298B050522C8De6D841`.
 
 Contracts have two options for reading latest data from a DIRT oracle feed:
 
@@ -54,7 +54,7 @@ contract Oracle {
 contract OracleReader {
 
     function getDataFromOracle() public view returns (int128) {
-        Oracle oracle = Oracle(0x9fAf61F729d43Ca13bC27298B050522C8De6D841);
+        Oracle oracle = Oracle(0x19BB7bEdB7D180b25E216ff8fC3D9d3487a54239);
         int128 medianPrice = oracle.getValue("DIRT ETH-USD");
         return medianPrice;
     }
@@ -80,7 +80,7 @@ contract Oracle {
 contract OracleReader {
 
     function getDataFromOracle() public view returns (int128) {
-        Oracle oracle = Oracle(0x9fAf61F729d43Ca13bC27298B050522C8De6D841);
+        Oracle oracle = Oracle(0x19BB7bEdB7D180b25E216ff8fC3D9d3487a54239);
         int128 medianPrice = oracle.getValueAndTime("DIRT ETH-USD");
         return medianPrice;
     }
