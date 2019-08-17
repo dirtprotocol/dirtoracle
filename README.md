@@ -105,7 +105,7 @@ An oracle brings off-chain data onto the blockchain for use in smart contracts. 
 
 Any user can create a DataFeed by whitelisting a set of approved Sources. The Oracle contract maintains a whitelist of Sources and the public key(s) for each Source in the DataFeed. For example, Alice can create a DataFeed for ETH-JPY that accepts data from three Sources: Liquid, Coinbase, and Bittrex. For each DataFeed, the Oracle contract verifies onchain that the data submitted came from whitelisted Sources using the exchange’s stored public key. 
 
-You can find more details in our protocol draft: https://docsend.com/view/83g3mnp
+You can find more details in our protocol draft: https://github.com/dirtprotocol/dirtoracle/blob/master/Protocol-Design.md
 
 
 The DIRT oracle depends on public key encryption to report data onchain and verify correctness. Each price feed is created with a whitelisted set of sources. The public key of these sources are stored onchain and used to verify that only approved sources can contribute.  
