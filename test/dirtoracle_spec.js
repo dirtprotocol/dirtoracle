@@ -318,4 +318,71 @@ contract("DirtOracle", function (accounts) {
     await expectRevert(omf.addSource(dataFeedName, web3.utils.toHex('OMC'), dataName), "Source already exists")
   })
 
+  it("add + remove + add single source", async function () {
+    await omf.addSource(dataFeedName, web3.utils.toHex('OMC'), dataName)
+    await omf.removeSource(dataFeedName, web3.utils.toHex('OMC'))
+    await omf.addSource(dataFeedName, web3.utils.toHex('OMC'), dataName)
+    await omf.addSigner(dataFeedName, web3.utils.toHex('OMC'), OMC_ADDRESS)
+
+    let value = web3.utils.toWei('1');
+    let timestamp = 123456789
+    let abiEncodedSignature = await createAbiEncodedSignature(value, timestamp, dataName, OMC_KEY)
+    await omf.post(dataFeedName, [dataName], [value], [timestamp], [abiEncodedSignature])
+    let fetchedValue = await omf.getValue(dataFeedName)
+    assert.equal(value, fetchedValue)
+  })
+
+  it("add + remove + add batch", async function () {
+    await omf.batchAddSourceAndSigner(dataFeedName, [
+      web3.utils.toHex('OMC'),
+      web3.utils.toHex('Coinbase'),
+      web3.utils.toHex('Kraken')
+    ], [
+        dataName,
+        dataName,
+        altDataName
+      ], [
+        OMC_ADDRESS,
+        COINBASE_ADDRESS,
+        KRAKEN_ADDRESS
+      ])
+
+    await omf.removeSource(dataFeedName, web3.utils.toHex('OMC'))
+    await omf.removeSource(dataFeedName, web3.utils.toHex('Coinbase'))
+    await omf.removeSource(dataFeedName, web3.utils.toHex('Kraken'))
+
+    await omf.batchAddSourceAndSigner(dataFeedName, [
+      web3.utils.toHex('OMC'),
+      web3.utils.toHex('Coinbase'),
+      web3.utils.toHex('Kraken')
+    ], [
+        dataName,
+        dataName,
+        altDataName
+      ], [
+        OMC_ADDRESS,
+        COINBASE_ADDRESS,
+        KRAKEN_ADDRESS
+      ])
+    await omf.addReader(dataFeedName, accounts[0])
+
+    let valueOmc = web3.utils.toWei('200');
+    let valueCoinbase = web3.utils.toWei('250');
+    let valueKraken = web3.utils.toWei('251');
+    let timestamp = 123456789
+    let abiEncodedSignatureOMC = await createAbiEncodedSignature(valueOmc, timestamp, dataName, OMC_KEY)
+    let abiEncodedSignatureCoinbase = await createAbiEncodedSignature(valueCoinbase, timestamp, dataName, COINBASE_KEY)
+    let abiEncodedSignatureKraken = await createAbiEncodedSignature(valueKraken, timestamp, altDataName, KRAKEN_KEY)
+    await omf.post(
+      dataFeedName,
+      [dataName, dataName, altDataName],
+      [valueOmc, valueCoinbase, valueKraken],
+      [timestamp, timestamp, timestamp],
+      [abiEncodedSignatureOMC, abiEncodedSignatureCoinbase, abiEncodedSignatureKraken]
+    )
+
+    let fetchedValue = await omf.getValue(dataFeedName)
+    assert.equal(web3.utils.toWei('250'), fetchedValue)
+  })
+
 });
