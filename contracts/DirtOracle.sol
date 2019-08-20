@@ -257,7 +257,7 @@ contract DirtOracle {
     require(m.sourceToId[src] == 0, "Source already exists");
     require(m.lastSourceId < 512, "Reached max of 511 sources");
     m.lastSourceId++;
-    m.sourceToId[src] = dataFeeds_config[dataFeed].lastSourceId;
+    m.sourceToId[src] = m.lastSourceId;
     m.idToSource[m.lastSourceId] = src;
     m.sourceToDataId[src] = sourceDataId;
 
@@ -274,8 +274,10 @@ contract DirtOracle {
     m.sourceToId[src] = 0;
     m.idToSource[m.lastSourceId] = 0;
 
-    m.sourceToId[lastSource] = idToReassign;
-    m.idToSource[idToReassign] = lastSource;
+    if (m.lastSourceId != idToReassign) {
+      m.sourceToId[lastSource] = idToReassign;
+      m.idToSource[idToReassign] = lastSource;
+    }
 
     // Delete source's signers.
     address[] storage signersToDelete = m.sourceToSigners[src];
