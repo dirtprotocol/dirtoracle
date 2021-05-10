@@ -13,7 +13,7 @@
   "author": "",
   "license": "MIT",
   "dependencies": {
-    "lodash": "^4.17.11",
+    "lodash": "^4.17.21",
     "truffle-hdwallet-provider": "^1.0.9",
     "web3": "^1.0.0-beta.51"
   },
